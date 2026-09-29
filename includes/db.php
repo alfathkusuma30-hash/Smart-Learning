@@ -35,6 +35,96 @@ if ($is_localhost) {
     define('DB_PORT', 3306);
 }
 
+function _ensure_users_columns_exist(mysqli $conn): void {
+    $res = $conn->query("SHOW COLUMNS FROM `users`");
+    if (!$res) return;
+    $existingCols = [];
+    while ($c = $res->fetch_assoc()) {
+        $existingCols[strtolower($c['Field'])] = true;
+    }
+
+    $colsToAdd = [
+        'user_id' => "VARCHAR(20) DEFAULT NULL",
+        'nrp' => "VARCHAR(50) DEFAULT NULL",
+        'name' => "VARCHAR(100) DEFAULT NULL",
+        'dept' => "VARCHAR(100) DEFAULT NULL",
+        'email' => "VARCHAR(100) DEFAULT NULL",
+        'phone' => "VARCHAR(50) DEFAULT NULL",
+        'avatar_color' => "VARCHAR(20) DEFAULT '#0f766e'",
+        'bio' => "TEXT DEFAULT NULL",
+        'reminder_freq' => "VARCHAR(50) DEFAULT '24 Jam'",
+        'wa_notif' => "TINYINT(1) NOT NULL DEFAULT 1",
+        'type' => "ENUM('User','Admin') NOT NULL DEFAULT 'User'",
+        'created_at' => "DATETIME DEFAULT CURRENT_TIMESTAMP"
+    ];
+
+    foreach ($colsToAdd as $col => $definition) {
+        if (!isset($existingCols[$col])) {
+            $conn->query("ALTER TABLE `users` ADD COLUMN `{$col}` {$definition}");
+        }
+    }
+
+    // Pastikan kolom role adalah VARCHAR(100) bukan enum('admin','user') agar dapat menyimpan jabatan operasional
+    $conn->query("ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(100) DEFAULT NULL");
+
+    // Sinkronisasi data lama nama -> name dan unit_kerja -> dept
+    if (isset($existingCols['nama'])) {
+        $conn->query("UPDATE `users` SET `name` = `nama` WHERE (`name` IS NULL OR `name` = '') AND `nama` IS NOT NULL AND `nama` != ''");
+    }
+    if (isset($existingCols['unit_kerja'])) {
+        $conn->query("UPDATE `users` SET `dept` = `unit_kerja` WHERE (`dept` IS NULL OR `dept` = '') AND `unit_kerja` IS NOT NULL AND `unit_kerja` != ''");
+    }
+    if (isset($existingCols['role'])) {
+        $conn->query("UPDATE `users` SET `type` = 'Admin' WHERE LOWER(`role`) = 'admin' AND (`type` IS NULL OR `type` = '' OR `type` = 'User')");
+    }
+
+    // Default metadata untuk user bawaan
+    $conn->query("UPDATE `users` SET 
+        `user_id` = 'EP', `nrp` = 'ANTAM-08912', `role` = 'Operasional Tambang', `dept` = 'Mining Operations Underground', 
+        `email` = 'egy.pratama@antam.com', `phone` = '0812-3456-7890', `avatar_color` = '#d4af37', 
+        `bio` = 'Operator Tambang Bawah Tanah Site Pongkor. Fokus pada pemenuhan K3 dan standar operasional ESDM.', 
+        `reminder_freq` = '24 Jam', `wa_notif` = 1 
+        WHERE `username` = 'egy'");
+
+    $conn->query("UPDATE `users` SET 
+        `user_id` = 'BS', `nrp` = 'ANTAM-07844', `role` = 'Processing Plant', `dept` = 'Plant & Smelter', 
+        `email` = 'budi.santoso@antam.com', `phone` = '0813-9876-5432', `avatar_color` = '#38bdf8', 
+        `bio` = 'Teknisi Pengolahan Emas & Logam Mulia. Pengawas K3 Pabrik.', 
+        `reminder_freq` = '12 Jam', `wa_notif` = 1 
+        WHERE `username` = 'budi'");
+
+    $conn->query("UPDATE `users` SET 
+        `user_id` = 'AW', `nrp` = 'ANTAM-06519', `role` = 'Logistik & Gudang', `dept` = 'Supply Chain & Bahan Peledak', 
+        `email` = 'andi.wijaya@antam.com', `phone` = '0811-2233-4455', `avatar_color` = '#a855f7', 
+        `bio` = 'Koordinator Pergudangan dan Distribusi Handak Site Pongkor.', 
+        `reminder_freq` = '24 Jam', `wa_notif` = 0 
+        WHERE `username` = 'andi'");
+
+    $conn->query("UPDATE `users` SET 
+        `user_id` = 'LO', `nrp` = 'ANTAM-HC001', `name` = 'Learning Ops Admin', `role` = 'Learning & Development', `type` = 'Admin', `dept` = 'Human Capital & Corporate University', 
+        `email` = 'admin.lnd@antam.com', `phone` = '0811-9988-7766', `avatar_color` = '#10b981', 
+        `bio` = 'Super Administrator Sistem Pembelajaran & Evaluasi Kepatuhan K3 Terintegrasi PT ANTAM Tbk.', 
+        `reminder_freq` = 'Realtime', `wa_notif` = 1 
+        WHERE `username` = 'admin'");
+
+    // Pastikan tabel certificates memiliki kolom attachment dan template_file
+    $resCert = $conn->query("SHOW COLUMNS FROM `certificates` LIKE 'attachment'");
+    if ($resCert && $resCert->num_rows === 0) {
+        $conn->query("ALTER TABLE `certificates` ADD COLUMN `attachment` VARCHAR(255) DEFAULT NULL");
+    }
+
+    $resTpl = $conn->query("SHOW COLUMNS FROM `certificates` LIKE 'template_file'");
+    if ($resTpl && $resTpl->num_rows === 0) {
+        $conn->query("ALTER TABLE `certificates` ADD COLUMN `template_file` VARCHAR(255) DEFAULT NULL");
+    }
+
+    // Pastikan tabel activities memiliki kolom cert_template
+    $resActTpl = $conn->query("SHOW COLUMNS FROM `activities` LIKE 'cert_template'");
+    if ($resActTpl && $resActTpl->num_rows === 0) {
+        $conn->query("ALTER TABLE `activities` ADD COLUMN `cert_template` VARCHAR(255) DEFAULT NULL");
+    }
+}
+
 function _auto_init_tables_if_needed(mysqli $conn): void {
     static $initialized = false;
     if ($initialized) return;
@@ -51,6 +141,7 @@ function _auto_init_tables_if_needed(mysqli $conn): void {
     }
 
     if (empty($missingTables)) {
+        _ensure_users_columns_exist($conn);
         return; // Semua tabel sudah lengkap
     }
 

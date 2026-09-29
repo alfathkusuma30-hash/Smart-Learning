@@ -1,0 +1,13 @@
+# Ignored uploaded files
+uploads/*
+!uploads/templates/
+uploads/templates/*
+!uploads/attendance/
+uploads/attendance/*
+!uploads/**/.gitkeep
+
+# IDE / System
+.vscode/
+*.log
+Thumbs.db
+.DS_Store

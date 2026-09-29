@@ -175,7 +175,7 @@ $countAllAdmin = $countReq + $countEsc + $countVerif;
 
                     <!-- Direct Action Buttons for Admin -->
                     <div class="notif-action-row">
-                        <button class="btn-action-primary bg-green-solid" onclick="sendWhatsAppNudge('Egy Pratama', 'Safety Induction Site Tambang Pongkor', 'notif-item-1')">
+                        <button class="btn-action-primary bg-green-solid" onclick="sendWhatsAppNudge('Egy Pratama', 'Safety Induction Site Tambang Pongkor', 'notif-item-1', 'egy')">
                             <i class="ph-fill ph-whatsapp-logo"></i>
                             <span>Nudge WA</span>
                         </button>

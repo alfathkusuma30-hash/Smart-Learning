@@ -406,7 +406,22 @@ function openAssignModalForUser(userName) {
 }
 
 // C. WhatsApp Nudge Action (Admin to Employee)
-function sendWhatsAppNudge(employeeName, courseName, notifId = null) {
+function sendWhatsAppNudge(employeeName, courseName, notifId = null, username = null, defaultPhone = null) {
+    // 1. Dapatkan nomor telepon penerima dari data kontak sistem
+    let recipientPhone = defaultPhone || '';
+    if (!recipientPhone && window.USER_CONTACTS) {
+        if (username && window.USER_CONTACTS[username]) {
+            recipientPhone = window.USER_CONTACTS[username].phone || '';
+        } else if (employeeName && window.USER_CONTACTS[employeeName]) {
+            recipientPhone = window.USER_CONTACTS[employeeName].phone || '';
+        }
+    }
+    if (!recipientPhone) {
+        recipientPhone = '0812-3456-7890';
+    }
+
+    const hasGatewayToken = !!(window.GATEWAY_CONFIG && window.GATEWAY_CONFIG.token && window.GATEWAY_CONFIG.auto_send);
+
     const bodyHtml = `
         <div class="nudge-modal-content">
             <div class="flex items-center gap-3 mb-4">
@@ -415,38 +430,164 @@ function sendWhatsAppNudge(employeeName, courseName, notifId = null) {
                 </div>
                 <div>
                     <h4 class="font-semibold text-base">WhatsApp Gateway</h4>
-                    <p class="text-xs text-muted">Bot Korporat ANTAM</p>
+                    <p class="text-xs text-muted">Bot Korporat ANTAM — Human Capital & L&D</p>
                 </div>
             </div>
 
-            <div class="p-3 bg-gray-100 rounded-md border text-sm font-mono mb-4" style="background: #f8fafc; border: 1px solid #e2e8f0; line-height: 1.6; border-left: 4px solid #25D366;">
+            <!-- Input Nomor WhatsApp Penerima -->
+            <div class="form-group mb-4" style="background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <label class="form-label font-semibold text-xs text-dark uppercase flex items-center justify-between">
+                    <span><i class="ph-fill ph-phone text-green"></i> Nomor WhatsApp Tujuan:</span>
+                    <span class="text-xs text-muted font-normal font-mono">Format: 08xx / 628xx</span>
+                </label>
+                <div class="input-with-icon mt-1">
+                    <input type="tel" id="nudge-phone-input" class="form-input font-mono text-sm font-semibold" value="${recipientPhone}" placeholder="cth. 081234567890" style="background:white;">
+                </div>
+                <div class="flex items-center justify-between mt-2 flex-wrap gap-2">
+                    <label class="flex items-center gap-2 text-xs text-muted cursor-pointer" style="margin:0;">
+                        <input type="checkbox" id="nudge-save-phone" checked style="accent-color: #16a34a;">
+                        <span>Simpan perubahan nomor ke profil <strong>${employeeName}</strong></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Preview Isi Pesan Resmi -->
+            <div class="text-xs font-semibold text-muted uppercase mb-1 flex items-center gap-1">
+                <i class="ph-fill ph-chat-text"></i> Pratinjau Pesan yang Dikirimkan:
+            </div>
+            <div class="p-3 bg-gray-100 rounded-md border text-sm font-mono mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0; line-height: 1.6; border-left: 4px solid #25D366; font-size: 0.85rem;">
                 <strong>[PT ANTAM — SMART LEARNING ALARM]</strong><br>
                 Yth. Sdr. <strong>${employeeName}</strong>,<br><br>
                 Modul wajib: <em>"${courseName}"</em> telah mencapai batas waktu. Harap segera mengakses portal Smart Learning sebelum akses site dibekukan.<br><br>
                 Tautan: <u>https://learning.antam.com/auth?token=auth9281</u><br>
                 <em>— Learning & Development</em>
             </div>
+
+            <!-- Indikator Jalur Pengiriman -->
+            ${hasGatewayToken ? `
+                <div class="p-2 rounded text-xs flex items-center gap-2 mb-1" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac;">
+                    <i class="ph-fill ph-robot" style="font-size: 1.1rem;"></i>
+                    <span><strong>Mode Otomatis Aktif:</strong> Pesan akan dikirim langsung via WhatsApp Gateway Server.</span>
+                </div>
+            ` : `
+                <div class="p-2 rounded text-xs flex items-center gap-2 mb-1" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
+                    <i class="ph-fill ph-whatsapp-logo" style="font-size: 1.1rem;"></i>
+                    <span><strong>Mode Direct WhatsApp Web / App:</strong> Sekali klik, WhatsApp akan langsung terbuka dengan pesan siap kirim (100% Gratis & Nyata).</span>
+                </div>
+            `}
         </div>
     `;
 
     const footerHtml = `
         <button class="btn-light" onclick="closeModal()">Batal</button>
-        <button class="btn-dark" style="background: #16a34a;" onclick="confirmSendNudge('${employeeName}', '${notifId}')">
-            <i class="ph-fill ph-paper-plane-tilt"></i> Kirim Nudge
+        <button class="btn-dark" id="btn-submit-nudge" style="background: #16a34a;" onclick="confirmSendNudge('${escapeJs(employeeName)}', '${escapeJs(courseName)}', '${notifId || ''}')">
+            <i class="ph-fill ph-whatsapp-logo"></i> Kirim Nudge WhatsApp
         </button>
     `;
 
     openModal('Nudge WhatsApp', bodyHtml, footerHtml, 'ph-fill ph-whatsapp-logo');
 }
 
-function confirmSendNudge(employeeName, notifId) {
-    closeModal();
-    showToast(`Peringatan WhatsApp terkirim ke ${employeeName}.`, 'success');
-    if (notifId) {
-        const item = document.getElementById(notifId);
-        if (item) {
-            item.style.borderColor = '#16a34a';
+// Helper escape JS string
+function escapeJs(str) {
+    if (!str) return '';
+    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+async function confirmSendNudge(employeeName, courseName, notifId) {
+    const phoneInput = document.getElementById('nudge-phone-input');
+    const rawPhone = phoneInput ? phoneInput.value.trim() : '';
+    const savePhone = document.getElementById('nudge-save-phone')?.checked ? 1 : 0;
+
+    if (!rawPhone || rawPhone.length < 8) {
+        showToast('Mohon masukkan nomor WhatsApp tujuan yang valid (minimal 8 digit).', 'warning');
+        if (phoneInput) phoneInput.focus();
+        return;
+    }
+
+    // Normalisasi nomor telepon ke format internasional (628...)
+    let cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('0')) {
+        cleanPhone = '62' + cleanPhone.substring(1);
+    } else if (cleanPhone.startsWith('8')) {
+        cleanPhone = '62' + cleanPhone;
+    }
+
+    // Format pesan teks WhatsApp
+    const messageText = `*[PT ANTAM — SMART LEARNING ALARM]*\n` +
+        `Yth. Sdr. *${employeeName}*,\n\n` +
+        `Modul wajib: "_${courseName}_" telah mencapai batas waktu. Harap segera mengakses portal Smart Learning sebelum akses site dibekukan.\n\n` +
+        `Tautan: https://learning.antam.com/auth?token=auth${Math.floor(1000 + Math.random() * 9000)}\n` +
+        `_— Learning & Development_`;
+
+    const waDirectUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`;
+
+    // Tombol loading
+    const btn = document.getElementById('btn-submit-nudge');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Menghubungkan...';
+    }
+
+    const hasGateway = !!(window.GATEWAY_CONFIG && window.GATEWAY_CONFIG.token && window.GATEWAY_CONFIG.auto_send);
+
+    // Jika bukan gateway, kita buka window WhatsApp langsung agar tidak terblokir popup blocker browser
+    let waWindow = null;
+    if (!hasGateway) {
+        waWindow = window.open(waDirectUrl, '_blank');
+    }
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'send_whatsapp_nudge');
+        fd.append('employee_name', employeeName);
+        fd.append('course_name', courseName);
+        fd.append('phone', rawPhone);
+        fd.append('save_phone', savePhone ? '1' : '0');
+
+        const resp = await fetch('api.php', { method: 'POST', body: fd });
+        const res = await resp.json();
+
+        if (res.success) {
+            if (res.mode === 'gateway') {
+                showToast(`✅ ${res.message}`, 'success');
+            } else {
+                // Direct mode
+                if (!waWindow || waWindow.closed) {
+                    // Fallback jika window belum terbuka
+                    window.open(res.wa_url || waDirectUrl, '_blank');
+                }
+                showToast(`✅ WhatsApp disiapkan untuk ${employeeName} (+${cleanPhone}). Silakan tekan kirim di WhatsApp.`, 'success');
+            }
+
+            // Perbarui cache kontak di browser
+            if (window.USER_CONTACTS) {
+                if (!window.USER_CONTACTS[employeeName]) window.USER_CONTACTS[employeeName] = {};
+                window.USER_CONTACTS[employeeName].phone = rawPhone;
+            }
+
+            closeModal();
+
+            if (notifId) {
+                const item = document.getElementById(notifId);
+                if (item) {
+                    item.style.borderColor = '#16a34a';
+                }
+            }
+        } else {
+            showToast(res.message || 'Gagal mengirim pesan.', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph-fill ph-whatsapp-logo"></i> Coba Lagi';
+            }
         }
+    } catch (e) {
+        // Fallback jika koneksi server error tetap buka WhatsApp
+        if (!waWindow || waWindow.closed) {
+            window.open(waDirectUrl, '_blank');
+        }
+        showToast(`Membuka WhatsApp ke +${cleanPhone}...`, 'success');
+        closeModal();
     }
 }
 
@@ -1280,16 +1421,21 @@ function submitQuizSim() {
 }
 
 // H. Certificate Viewer Modal (Premium Layout + Print)
-function openCertViewer(certName, regNo, score, issuedDate, validUntil, holderName) {
+function openCertViewer(certName, regNo, score, issuedDate, validUntil, holderName, templateFile) {
     score       = score       || '—';
     issuedDate  = issuedDate  || '—';
     validUntil  = validUntil  || '—';
     holderName  = holderName  || '—';
 
+    const hasCustomBg = templateFile && /\.(jpg|jpeg|png|webp)$/i.test(templateFile);
+    const bgStyle = hasCustomBg 
+        ? `background: linear-gradient(rgba(254,252,240,0.88), rgba(255,254,248,0.88)), url('uploads/templates/${templateFile}') center/cover no-repeat;`
+        : `background: linear-gradient(135deg, #fefcf0 0%, #fffef8 100%);`;
+
     const bodyHtml = `
         <style>
         .cert-print-wrap {
-            background: linear-gradient(135deg, #fefcf0 0%, #fffef8 100%);
+            ${bgStyle}
             border: 3px double #d4af37;
             border-radius: 16px;
             padding: 2rem 2.5rem;
@@ -1377,6 +1523,434 @@ function openCertViewer(certName, regNo, score, issuedDate, validUntil, holderNa
     openModal('E-Sertifikat Resmi ANTAM', bodyHtml, footerHtml, 'ph-fill ph-certificate');
 }
 
+// I. Sederhana: Selesaikan Pelatihan & Terbitkan E-Sertifikat Resmi Langsung
+function handleClaimCertificate(activityId, courseTitle, btn) {
+    let originalHtml = '';
+    if (btn) {
+        originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Menyiapkan Sertifikat...';
+    }
+
+    const fd = new FormData();
+    fd.append('action', 'claim_certificate');
+    fd.append('activity_id', activityId || '');
+    fd.append('course_title', courseTitle || '');
+
+    fetch('api.php', {
+        method: 'POST',
+        body: fd
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+
+        if (res.success) {
+            if (typeof playNotificationSound === 'function') {
+                playNotificationSound('success');
+            }
+            showToast(`🎉 Selamat! E-Sertifikat Resmi untuk "${res.course_title}" telah terbit!`, 'success');
+
+            // Buka viewer sertifikat resmi langsung
+            setTimeout(() => {
+                openCertViewer(
+                    res.course_title,
+                    res.reg_no,
+                    res.score || 100,
+                    res.issued_at,
+                    res.valid_until,
+                    res.holder_name
+                );
+            }, 500);
+
+            // Perbarui tampilan kartu kegiatan di UI jika tombol berada dalam kartu
+            const card = btn ? btn.closest('.course-active-card') : null;
+            if (card) {
+                const progBar = card.querySelector('.progress-bar');
+                const progText = card.querySelector('.progress-labels .font-bold');
+                if (progBar) progBar.style.width = '100%';
+                if (progText) progText.textContent = '100% Tuntas';
+
+                // Ganti tombol menjadi Lihat E-Sertifikat Resmi
+                btn.style.background = '#0f766e';
+                btn.style.borderColor = '#0f766e';
+                btn.innerHTML = '<i class="ph-fill ph-certificate"></i> Lihat E-Sertifikat Resmi';
+                btn.onclick = function() {
+                    openCertViewer(res.course_title, res.reg_no, res.score || 100, res.issued_at, res.valid_until, res.holder_name);
+                };
+            }
+        } else {
+            showToast(res.message || 'Gagal menerbitkan sertifikat.', 'error');
+        }
+    })
+    .catch(err => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+        showToast('Terjadi gangguan koneksi. Silakan coba lagi.', 'error');
+    });
+}
+
+// J. Upload External Certificate Modal (Pegawai Upload Sertifikat Eksternal/Mandiri)
+let selectedExternalCertFile = null;
+
+function openUploadExternalCertModal() {
+    selectedExternalCertFile = null;
+    const today = new Date();
+    const defaultValid = new Date(today.setFullYear(today.getFullYear() + 3)).toISOString().split('T')[0];
+
+    const bodyHtml = `
+        <div class="upload-cert-modal-body">
+            <div class="p-3 mb-3 border rounded text-xs" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
+                <i class="ph-fill ph-info"></i> Unggah sertifikat kompetensi K3, lisensi teknis, atau pelatihan eksternal (BNSP, Kemnaker, Inspektur Tambang ESDM) untuk dicatat dalam portofolio Anda.
+            </div>
+
+            <form id="form-upload-ext-cert" onsubmit="submitExternalCertificate(event)">
+                <div class="form-group mb-3">
+                    <label class="form-label font-semibold text-xs text-muted uppercase">Nama / Judul Sertifikat *</label>
+                    <input type="text" id="ext-cert-title" class="form-input mt-1" placeholder="Contoh: Sertifikasi Pengawas Operasional Pertama (POP) ESDM" required>
+                </div>
+
+                <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Nomor Registrasi / Lisensi *</label>
+                        <input type="text" id="ext-cert-reg" class="form-input mt-1" placeholder="Contoh: BNSP-K3-08912/2025" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Lembaga Penerbit / Akreditasi</label>
+                        <input type="text" id="ext-cert-issuer" class="form-input mt-1" placeholder="Contoh: BNSP / Kemnaker RI / ESDM" value="Kemnaker RI & Inspektur Tambang ESDM">
+                    </div>
+                </div>
+
+                <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Berlaku Hingga</label>
+                        <input type="date" id="ext-cert-valid" class="form-input mt-1" value="${defaultValid}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Skor / Nilai Kelulusan</label>
+                        <input type="number" id="ext-cert-score" class="form-input mt-1" min="0" max="100" value="95">
+                    </div>
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="form-label font-semibold text-xs text-muted uppercase">Upload Berkas / Bukti Sertifikat (PDF / JPG / PNG)</label>
+                    <div class="module-upload-dropzone mt-1" onclick="document.getElementById('ext-cert-file-input').click()" style="cursor: pointer; padding: 1.25rem; text-align: center; border: 2px dashed #cbd5e1; border-radius: 8px; background: #fafbfc;">
+                        <i class="ph-fill ph-cloud-arrow-up text-accent" style="font-size: 1.8rem;"></i>
+                        <p class="text-xs font-semibold text-dark mt-1" id="ext-cert-file-text">Pilih file sertifikat dari perangkat</p>
+                        <span class="text-xs text-muted">Format didukung: PDF, JPG, PNG (Maks 5MB)</span>
+                        <input type="file" id="ext-cert-file-input" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" onchange="handleExtCertFileSelect(this)">
+                    </div>
+                </div>
+            </form>
+        </div>
+    `;
+
+    const footerHtml = `
+        <button class="btn-light" onclick="closeModal()">Batal</button>
+        <button class="btn-dark" id="btn-submit-ext-cert" onclick="document.getElementById('form-upload-ext-cert').requestSubmit()">
+            <i class="ph-fill ph-check-circle"></i> Simpan ke Portofolio
+        </button>
+    `;
+
+    openModal('Upload Sertifikat Kompetensi', bodyHtml, footerHtml, 'ph-fill ph-certificate');
+}
+
+function handleExtCertFileSelect(inp) {
+    if (inp.files && inp.files[0]) {
+        selectedExternalCertFile = inp.files[0];
+        const textEl = document.getElementById('ext-cert-file-text');
+        if (textEl) {
+            textEl.innerHTML = `<span style="color:#0f766e; font-weight:700;">✅ Terpilih: ${inp.files[0].name}</span> (${(inp.files[0].size/1024).toFixed(0)} KB)`;
+        }
+    }
+}
+
+async function submitExternalCertificate(e) {
+    e.preventDefault();
+    const title = document.getElementById('ext-cert-title').value.trim();
+    const regNo = document.getElementById('ext-cert-reg').value.trim();
+    const issuer = document.getElementById('ext-cert-issuer').value.trim();
+    const validUntil = document.getElementById('ext-cert-valid').value;
+    const score = document.getElementById('ext-cert-score').value;
+
+    const btn = document.getElementById('btn-submit-ext-cert');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Menyimpan...';
+    }
+
+    const fd = new FormData();
+    fd.append('action', 'upload_external_certificate');
+    fd.append('title', title);
+    fd.append('reg_no', regNo);
+    fd.append('issued_by', issuer);
+    fd.append('valid_until', validUntil);
+    fd.append('score', score);
+    if (selectedExternalCertFile) {
+        fd.append('cert_file', selectedExternalCertFile);
+    }
+
+    try {
+        const resp = await fetch('api.php', { method: 'POST', body: fd });
+        const res = await resp.json();
+        if (res.success) {
+            closeModal();
+            showToast('🎉 ' + res.message, 'success');
+            playNotificationSound('success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1200);
+        } else {
+            showToast(res.message || 'Gagal menyimpan sertifikat.', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Simpan ke Portofolio';
+            }
+        }
+    } catch(err) {
+        showToast('Terjadi kesalahan koneksi server.', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Simpan ke Portofolio';
+        }
+    }
+}
+
+// =========================================================================
+// K. BATCH CERTIFICATE GENERATOR: UPLOAD TEMPLATE & AUTO-GENERATE FOR PARTICIPANTS
+// =========================================================================
+let selectedTemplateFile = null;
+
+function openBatchCertModal(defaultCourseTitle = '') {
+    selectedTemplateFile = null;
+    const cleanCourse = defaultCourseTitle || '';
+
+    // Daftar pegawai di site pongkor
+    const employees = [
+        { username: 'egy', name: 'Egy Pratama', role: 'Operasional Tambang Underground', nrp: 'ANTAM-08912' },
+        { username: 'budi', name: 'Budi Santoso', role: 'Processing Plant & Smelter', nrp: 'ANTAM-07844' },
+        { username: 'andi', name: 'Andi Wijaya', role: 'Logistik Handak & Gudang', nrp: 'ANTAM-06519' }
+    ];
+
+    const empCheckboxes = employees.map((emp) => `
+        <label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 text-xs mb-1" style="background:#fff; border-color:#e2e8f0; display:flex; align-items:center; justify-content:space-between;">
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="batch_participants" value="${emp.name}" checked class="form-checkbox" style="width:16px; height:16px; accent-color:#0f766e;">
+                <div>
+                    <strong class="text-dark block" style="font-size:0.8rem;">${emp.name}</strong>
+                    <span class="text-muted font-mono" style="font-size:0.7rem;">${emp.role} · ${emp.nrp}</span>
+                </div>
+            </div>
+            <span class="tag tag-teal text-xs">Pegawai Terdaftar</span>
+        </label>
+    `).join('');
+
+    const bodyHtml = `
+        <div class="batch-cert-modal-body">
+            <div class="p-3 mb-3 border rounded text-xs" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534; line-height:1.45;">
+                <i class="ph-fill ph-magic-wand" style="font-size:1.1rem; vertical-align:middle;"></i>
+                <strong>Penerbitan Sertifikat Otomatis:</strong> Unggah template sertifikat kegiatan, lalu pilih nama-nama peserta yang telah mengikuti kegiatan. Sistem akan otomatis menyematkan nama masing-masing peserta ke sertifikat dan menerbitkannya secara serentak ke portofolio mereka.
+            </div>
+
+            <form id="form-batch-cert" onsubmit="event.preventDefault(); submitBatchCertificates();">
+                <!-- 1. Judul Kegiatan -->
+                <div class="form-group mb-3">
+                    <label class="form-label font-semibold text-xs text-muted uppercase">Judul / Nama Kegiatan Pelatihan *</label>
+                    <input type="text" id="batch-course-title" class="form-input mt-1" placeholder="Contoh: Safety Induction Site Tambang Pongkor" value="${cleanCourse}" required>
+                </div>
+
+                <!-- 2. Upload Template Sertifikat -->
+                <div class="form-group mb-3">
+                    <label class="form-label font-semibold text-xs text-muted uppercase">Upload Desain / File Template Sertifikat (Opsional)</label>
+                    <div class="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:bg-gray-50" 
+                         id="batch-tpl-dropzone" 
+                         onclick="document.getElementById('batch-tpl-input').click()"
+                         style="border-color:#d4af37; background:#fdfdfa;">
+                        <i class="ph-fill ph-image text-amber" style="font-size: 2rem; display:block; margin: 0 auto 0.25rem;"></i>
+                        <div class="text-xs font-semibold text-dark" id="batch-tpl-title">Klik untuk Unggah Desain Template (.png, .jpg, .pdf)</div>
+                        <div class="text-xs text-muted" id="batch-tpl-sub">Kosongkan jika ingin memakai Template Emas Standar Resmi PT ANTAM</div>
+                        <input type="file" id="batch-tpl-input" accept=".png,.jpg,.jpeg,.pdf" style="display:none;" onchange="handleBatchTemplateFile(this)">
+                    </div>
+                </div>
+
+                <!-- 3. Daftar Peserta yang Mengikuti Kegiatan -->
+                <div class="form-group mb-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Peserta yang Telah Mengikuti Kegiatan *</label>
+                        <span class="text-xs text-accent cursor-pointer" onclick="toggleSelectAllBatch(this)">Pilih Semua</span>
+                    </div>
+                    
+                    <div class="batch-emp-list p-2 border rounded" style="background:#f8fafc; max-height:160px; overflow-y:auto;">
+                        ${empCheckboxes}
+                    </div>
+
+                    <!-- Input nama peserta tambahan -->
+                    <div class="mt-2">
+                        <label class="text-xs text-muted font-semibold block mb-1">+ Tambah Peserta Lapangan / Mitra Kontraktor (1 nama per baris):</label>
+                        <textarea id="batch-extra-participants" class="form-input text-xs" rows="2" placeholder="Contoh:&#10;Rian Setiawan&#10;Dewi Sartika"></textarea>
+                    </div>
+                </div>
+
+                <!-- 4. Instansi Penerbit & Masa Berlaku -->
+                <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Instansi Penerbit</label>
+                        <input type="text" id="batch-issuer" class="form-input mt-1" value="PT ANTAM (PERSERO) TBK — Site Pongkor">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Masa Berlaku</label>
+                        <input type="text" class="form-input mt-1" value="3 Tahun (Standar K3)" readonly style="background:#f1f5f9;">
+                    </div>
+                </div>
+            </form>
+        </div>
+    `;
+
+    const footerHtml = `
+        <button type="button" class="btn-light" onclick="closeModal()">Batal</button>
+        <button type="button" class="btn-dark" id="btn-submit-batch-cert" onclick="submitBatchCertificates()">
+            <i class="ph-fill ph-magic-wand"></i> Terbitkan Sertifikat Otomatis
+        </button>
+    `;
+
+    openModal('Upload Template & Penerbitan Sertifikat Peserta', bodyHtml, footerHtml, 'ph-fill ph-certificate');
+}
+
+function handleBatchTemplateFile(input) {
+    if (input.files && input.files[0]) {
+        selectedTemplateFile = input.files[0];
+        const titleEl = document.getElementById('batch-tpl-title');
+        const subEl = document.getElementById('batch-tpl-sub');
+        if (titleEl) titleEl.innerHTML = `<span style="color:#0f766e; font-weight:700;"><i class="ph-fill ph-check-circle"></i> File Template Terpilih: ${selectedTemplateFile.name}</span>`;
+        if (subEl) subEl.textContent = `${(selectedTemplateFile.size / 1024).toFixed(0)} KB · Template siap digunakan`;
+        showToast(`Template "${selectedTemplateFile.name}" berhasil dipilih.`, 'success');
+    }
+}
+
+function toggleSelectAllBatch(btn) {
+    const checkboxes = document.querySelectorAll('input[name="batch_participants"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    btn.textContent = allChecked ? 'Pilih Semua' : 'Batal Semua';
+}
+
+function submitBatchCertificates() {
+    const courseTitleEl = document.getElementById('batch-course-title');
+    const courseTitle = courseTitleEl ? courseTitleEl.value.trim() : '';
+    if (!courseTitle) {
+        showToast('Judul kegiatan pelatihan wajib diisi!', 'warning');
+        if (courseTitleEl) courseTitleEl.focus();
+        return;
+    }
+
+    // Ambil peserta terpilih
+    const checked = Array.from(document.querySelectorAll('input[name="batch_participants"]:checked')).map(cb => cb.value.trim());
+    const extraEl = document.getElementById('batch-extra-participants');
+    if (extraEl && extraEl.value.trim()) {
+        const extraNames = extraEl.value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        checked.push(...extraNames);
+    }
+
+    if (checked.length === 0) {
+        showToast('Pilih atau masukkan minimal 1 nama peserta kegiatan!', 'warning');
+        return;
+    }
+
+    const issuerEl = document.getElementById('batch-issuer');
+    const issuer = issuerEl ? issuerEl.value.trim() : 'PT ANTAM (PERSERO) TBK';
+
+    const submitBtn = document.getElementById('btn-submit-batch-cert');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Menerbitkan Sertifikat...';
+    }
+
+    const fd = new FormData();
+    fd.append('action', 'batch_generate_certificates');
+    fd.append('course_title', courseTitle);
+    fd.append('participants', JSON.stringify(checked));
+    fd.append('issued_by', issuer);
+    if (selectedTemplateFile) {
+        fd.append('template_file', selectedTemplateFile);
+    }
+
+    fetch('api.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="ph-fill ph-magic-wand"></i> Terbitkan Sertifikat Otomatis';
+            }
+
+            if (res.success) {
+                if (typeof playNotificationSound === 'function') {
+                    playNotificationSound('success');
+                }
+                showToast(`🎉 Sukses! ${res.count} E-Sertifikat berhasil diterbitkan untuk "${res.course_title}"!`, 'success');
+
+                // Tampilkan Modal Hasil Rekapitulasi Sertifikat
+                showBatchResultsModal(res);
+            } else {
+                showToast(res.message || 'Gagal menerbitkan sertifikat.', 'error');
+            }
+        })
+        .catch(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="ph-fill ph-magic-wand"></i> Terbitkan Sertifikat Otomatis';
+            }
+            showToast('Terjadi gangguan jaringan. Coba lagi.', 'error');
+        });
+}
+
+function showBatchResultsModal(res) {
+    const listHtml = res.generated.map(g => `
+        <div class="flex items-center justify-between p-3 border rounded mb-2" style="background:#fff; border-color:#e2e8f0; display:flex; align-items:center; justify-content:space-between;">
+            <div class="flex items-center gap-3">
+                <div class="mini-avatar" style="background:#d4af37; color:#fff; width:36px; height:36px; font-weight:700; font-size:0.85rem;">
+                    ${g.user_name.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                    <strong class="text-dark block" style="font-size:0.85rem;">${g.user_name}</strong>
+                    <span class="text-xs text-muted font-mono">No. Reg: ${g.reg_no} · Berlaku s/d ${g.valid_until}</span>
+                </div>
+            </div>
+            <button type="button" class="btn-dark text-xs" style="padding:0.35rem 0.75rem;" onclick="openCertViewer('${addslashesJs(g.course_title)}', '${addslashesJs(g.reg_no)}', '${g.score}', '${addslashesJs(g.issued_at)}', '${addslashesJs(g.valid_until)}', '${addslashesJs(g.user_name)}', '${g.template_file || ''}')">
+                <i class="ph-fill ph-eye"></i> Lihat E-Sertifikat
+            </button>
+        </div>
+    `).join('');
+
+    const bodyHtml = `
+        <div class="batch-result-wrap text-center">
+            <div style="font-size:3rem; color:#10b981; margin-bottom:0.5rem;"><i class="ph-fill ph-seal-check"></i></div>
+            <h3 class="font-bold text-lg text-dark mb-1">${res.count} E-Sertifikat Berhasil Diterbitkan!</h3>
+            <p class="text-xs text-muted mb-4">Kegiatan: <strong>${res.course_title}</strong>. Sertifikat resmi telah tersimpan di portofolio masing-masing pegawai dan dapat langsung diakses / dicetak.</p>
+
+            <div class="text-left mb-3" style="max-height:220px; overflow-y:auto;">
+                ${listHtml}
+            </div>
+        </div>
+    `;
+
+    const footerHtml = `
+        <button type="button" class="btn-dark w-full" onclick="closeModal(); window.location.reload();">
+            <i class="ph-fill ph-check"></i> Selesai & Perbarui Halaman
+        </button>
+    `;
+
+    openModal('Sertifikat Berhasil Diterbitkan', bodyHtml, footerHtml, 'ph-fill ph-seal-check');
+}
+
+function addslashesJs(str) {
+    return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+}
+
 // I. User Profile Audit Modal
 function openUserProfileAudit(name, initials, unit) {
     const bodyHtml = `
@@ -1455,145 +2029,541 @@ function markAllAsRead() {
 }
 
 // ==========================================
-// K. ALUR KEGIATAN BARU PEGAWAI & KONFIRMASI ADMIN
+// K. ALUR KEGIATAN BARU PEGAWAI: MULTI-STEP WIZARD (STEP 1: INFO -> STEP 2: TEMPLATE -> STEP 3: NOTIFIKASI)
 // ==========================================
+let newActWizard = {
+    step: 1,
+    title: '',
+    category: 'K3 & Keselamatan Tambang',
+    type: 'Wajib K3',
+    duration: '2 Hari (16 Jam)',
+    deadline: '26 Agu 2026',
+    notes: '',
+    templateFile: null,
+    templateChoice: 'default' // 'default' | 'custom'
+};
 
 function openNewActivityModal() {
-    const defaultDeadline = '26 Agu 2026';
+    newActWizard = {
+        step: 1,
+        title: '',
+        category: 'K3 & Keselamatan Tambang',
+        type: 'Wajib K3',
+        duration: '2 Hari (16 Jam)',
+        deadline: '26 Agu 2026',
+        notes: '',
+        templateFile: null,
+        templateChoice: 'default'
+    };
+    renderNewActivityWizard();
+}
+
+function openNewActivityModalWithPreset(title, type, category, duration, level) {
+    newActWizard = {
+        step: 1,
+        title: title || '',
+        category: category || 'K3 & Keselamatan Tambang',
+        type: type || 'Wajib K3',
+        duration: duration || '2 Hari (16 Jam)',
+        deadline: '26 Agu 2026',
+        notes: `Pengajuan dari rekomendasi LNA: ${title} (${level || 'Basic'}). Diperlukan untuk peningkatan kompetensi operasional site.`,
+        templateFile: null,
+        templateChoice: 'default'
+    };
+    renderNewActivityWizard();
+}
+
+function setActTemplateChoice(choice) {
+    newActWizard.templateChoice = choice;
+    const lblDefault = document.getElementById('lbl-tpl-default');
+    const lblCustom = document.getElementById('lbl-tpl-custom');
+    if (lblDefault) {
+        lblDefault.style.borderColor = (choice === 'default') ? '#0f766e' : '#e2e8f0';
+        lblDefault.style.background = (choice === 'default') ? '#f0fdfa' : '#fff';
+    }
+    if (lblCustom) {
+        lblCustom.style.borderColor = (choice === 'custom') ? '#0f766e' : '#e2e8f0';
+        lblCustom.style.background = (choice === 'custom') ? '#f0fdfa' : '#fff';
+    }
+    const dropzone = document.getElementById('custom-template-dropzone');
+    if (dropzone) {
+        dropzone.style.display = (choice === 'custom') ? 'block' : 'none';
+    }
+}
+
+function handleWizardTemplateFileSelect(input) {
+    if (input.files && input.files[0]) {
+        newActWizard.templateFile = input.files[0];
+        const label = document.getElementById('wiz-tpl-file-name');
+        if (label) {
+            label.innerHTML = `<span style="color:#0f766e; font-weight:700;"><i class="ph-fill ph-check-circle"></i> File Dipilih: ${input.files[0].name}</span>`;
+        }
+        showToast(`Template "${input.files[0].name}" berhasil dipilih.`, 'success');
+    }
+}
+
+function goActivityWizardStep(targetStep) {
+    // Simpan data dari step 1 sebelum berpindah
+    if (newActWizard.step === 1) {
+        const titleEl = document.getElementById('wiz-act-title');
+        const catEl = document.getElementById('wiz-act-category');
+        const typeEl = document.getElementById('wiz-act-type');
+        const durEl = document.getElementById('wiz-act-duration');
+        const deadEl = document.getElementById('wiz-act-deadline');
+        const notesEl = document.getElementById('wiz-act-notes');
+
+        const titleVal = titleEl ? titleEl.value.trim() : '';
+        if (targetStep > 1 && !titleVal) {
+            showToast('Nama Kegiatan / Modul Pelatihan wajib diisi!', 'warning');
+            if (titleEl) titleEl.focus();
+            return;
+        }
+
+        newActWizard.title = titleVal;
+        if (catEl) newActWizard.category = catEl.value;
+        if (typeEl) newActWizard.type = typeEl.value;
+        if (durEl) newActWizard.duration = durEl.value.trim();
+        if (deadEl) newActWizard.deadline = deadEl.value.trim();
+        if (notesEl) newActWizard.notes = notesEl.value.trim();
+    }
+
+    if (newActWizard.step === 2 && targetStep === 3) {
+        if (newActWizard.templateChoice === 'custom' && !newActWizard.templateFile) {
+            showToast('Pilih berkas template kustom (.png, .jpg, .pdf) atau pilih opsi Template Emas Standar Resmi ANTAM.', 'warning');
+            return;
+        }
+    }
+
+    newActWizard.step = targetStep;
+    renderNewActivityWizard();
+}
+
+function renderNewActivityWizard() {
+    const s = newActWizard;
+
+    // Header Step Navigation Pills
+    const stepsHeader = `
+        <div class="wizard-steps-header mb-4" style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:0.85rem;">
+            <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; font-weight:700; color:${s.step >= 1 ? '#0f766e' : '#94a3b8'};">
+                <span style="width:24px; height:24px; border-radius:50%; background:${s.step >= 1 ? '#0f766e' : '#e2e8f0'}; color:${s.step >= 1 ? '#fff' : '#64748b'}; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem;">1</span>
+                <span>1. Info Kegiatan</span>
+            </div>
+            <div style="flex:1; height:2px; background:${s.step >= 2 ? '#0f766e' : '#e2e8f0'}; margin:0 0.5rem;"></div>
+            <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; font-weight:700; color:${s.step >= 2 ? '#0f766e' : '#94a3b8'};">
+                <span style="width:24px; height:24px; border-radius:50%; background:${s.step >= 2 ? '#0f766e' : '#e2e8f0'}; color:${s.step >= 2 ? '#fff' : '#64748b'}; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem;">2</span>
+                <span>2. Template Sertifikat</span>
+            </div>
+            <div style="flex:1; height:2px; background:${s.step >= 3 ? '#0f766e' : '#e2e8f0'}; margin:0 0.5rem;"></div>
+            <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; font-weight:700; color:${s.step >= 3 ? '#0f766e' : '#94a3b8'};">
+                <span style="width:24px; height:24px; border-radius:50%; background:${s.step >= 3 ? '#0f766e' : '#e2e8f0'}; color:${s.step >= 3 ? '#fff' : '#64748b'}; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem;">3</span>
+                <span>3. Notifikasi Admin</span>
+            </div>
+        </div>
+    `;
+
+    let stepContent = '';
+    let footerButtons = '';
+
+    if (s.step === 1) {
+        stepContent = `
+            <div class="wizard-step-body">
+                <p class="text-xs text-muted mb-3" style="line-height: 1.5;">
+                    Langkah 1: Masukkan rincian kegiatan pembelajaran atau pelatihan operasional yang akan diajukan.
+                </p>
+
+                <div class="form-group mb-3">
+                    <label class="text-xs font-semibold text-muted font-mono uppercase">Nama Kegiatan / Modul Pelatihan *</label>
+                    <input type="text" id="wiz-act-title" class="form-input mt-1" placeholder="cth. Operasional Dump Truck Bawah Tanah" value="${escapeHtml(s.title)}" required>
+                </div>
+
+                <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="text-xs font-semibold text-muted font-mono uppercase">Kategori Kompetensi *</label>
+                        <select id="wiz-act-category" class="form-input mt-1">
+                            <option value="K3 & Keselamatan Tambang" ${s.category.includes('K3') ? 'selected' : ''}>K3 & Keselamatan Tambang</option>
+                            <option value="Operasional Tambang" ${s.category.includes('Operasional') ? 'selected' : ''}>Operasional Tambang</option>
+                            <option value="Regulasi ESDM" ${s.category.includes('ESDM') ? 'selected' : ''}>Regulasi ESDM</option>
+                            <option value="Teknik Pengolahan" ${s.category.includes('Pengolahan') ? 'selected' : ''}>Teknik Pengolahan & Smelter</option>
+                            <option value="Leadership & Supervisi" ${s.category.includes('Leadership') ? 'selected' : ''}>Leadership & Supervisi</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="text-xs font-semibold text-muted font-mono uppercase">Tipe Kurikulum *</label>
+                        <select id="wiz-act-type" class="form-input mt-1">
+                            <option value="Wajib K3" ${s.type.includes('Wajib') ? 'selected' : ''}>Wajib K3 Site</option>
+                            <option value="Pengembangan Mandiri" ${s.type.includes('Mandiri') ? 'selected' : ''}>Pengembangan Mandiri</option>
+                            <option value="Sertifikasi" ${s.type.includes('Sertifikasi') ? 'selected' : ''}>Sertifikasi Resmi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="text-xs font-semibold text-muted font-mono uppercase">Estimasi Durasi *</label>
+                        <input type="text" id="wiz-act-duration" class="form-input mt-1" value="${escapeHtml(s.duration)}" placeholder="cth. 2 Hari (16 Jam)">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="text-xs font-semibold text-muted font-mono uppercase">Target Tanggal Selesai *</label>
+                        <input type="text" id="wiz-act-deadline" class="form-input mt-1" value="${escapeHtml(s.deadline)}" placeholder="cth. 26 Agu 2026">
+                    </div>
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="text-xs font-semibold text-muted font-mono uppercase">Alasan Kebutuhan Pelatihan</label>
+                    <textarea id="wiz-act-notes" class="form-input mt-1" rows="2" placeholder="Jelaskan relevansi kegiatan ini terhadap tugas dan keselamatan kerja Anda di site...">${escapeHtml(s.notes)}</textarea>
+                </div>
+            </div>
+        `;
+
+        footerButtons = `
+            <button type="button" class="btn-light" onclick="closeModal()">Batal</button>
+            <button type="button" class="btn-dark" onclick="goActivityWizardStep(2)">
+                <span>Lanjutkan: Template Sertifikat</span>
+                <i class="ph-bold ph-arrow-right"></i>
+            </button>
+        `;
+    } else if (s.step === 2) {
+        stepContent = `
+            <div class="wizard-step-body">
+                <p class="text-xs text-muted mb-3" style="line-height: 1.5;">
+                    Langkah 2: Tentukan format & desain template sertifikat yang akan diterbitkan otomatis untuk peserta ketika kegiatan ini selesai.
+                </p>
+
+                <!-- Pilihan Template -->
+                <div class="template-choice-group mb-3">
+                    <label id="lbl-tpl-default" class="p-3 border rounded-lg cursor-pointer block mb-2 transition-all" 
+                           style="border-color:${s.templateChoice === 'default' ? '#0f766e' : '#e2e8f0'}; background:${s.templateChoice === 'default' ? '#f0fdfa' : '#fff'}; display:flex; align-items:center; gap:0.75rem;">
+                        <input type="radio" name="act_tpl_choice" value="default" ${s.templateChoice === 'default' ? 'checked' : ''} onchange="setActTemplateChoice('default')" style="accent-color:#0f766e; width:18px; height:18px;">
+                        <div style="flex:1;">
+                            <div class="flex items-center gap-2">
+                                <strong class="text-sm text-dark">Template Emas Standar Resmi PT ANTAM (Rekomendasi)</strong>
+                                <span class="tag tag-teal text-xs">Default</span>
+                            </div>
+                            <span class="text-xs text-muted block mt-0.5">Sertifikat berlatar belakang resmi ANTAM Pongkor dengan stempel nomor registrasi otomatis, QR verifikasi, dan skor kelulusan penuh.</span>
+                        </div>
+                    </label>
+
+                    <label id="lbl-tpl-custom" class="p-3 border rounded-lg cursor-pointer block transition-all" 
+                           style="border-color:${s.templateChoice === 'custom' ? '#0f766e' : '#e2e8f0'}; background:${s.templateChoice === 'custom' ? '#f0fdfa' : '#fff'}; display:flex; align-items:flex-start; gap:0.75rem;">
+                        <input type="radio" name="act_tpl_choice" value="custom" ${s.templateChoice === 'custom' ? 'checked' : ''} onchange="setActTemplateChoice('custom')" style="accent-color:#0f766e; width:18px; height:18px; margin-top:2px;">
+                        <div style="flex:1;">
+                            <div class="flex items-center gap-2">
+                                <strong class="text-sm text-dark">Upload Desain Template Kustom (.png, .jpg, .pdf)</strong>
+                                <span class="tag tag-amber text-xs">Kustom File</span>
+                            </div>
+                            <span class="text-xs text-muted block mt-0.5">Unggah berkas desain bingkai/kop sertifikat khusus (misal dari ESDM/BNSP atau lembaga sertifikasi eksternal).</span>
+                            
+                            <div id="custom-template-dropzone" class="mt-2" style="display:${s.templateChoice === 'custom' ? 'block' : 'none'};">
+                                <div class="border-2 border-dashed rounded p-3 text-center cursor-pointer hover:bg-gray-100" 
+                                     onclick="document.getElementById('wiz-tpl-file-input').click()"
+                                     style="border-color:#0f766e; background:#fff;">
+                                    <i class="ph-fill ph-file-image text-accent" style="font-size:1.8rem; display:block; margin:0 auto 0.2rem;"></i>
+                                    <div class="text-xs font-semibold text-dark" id="wiz-tpl-file-name">${s.templateFile ? 'File: ' + s.templateFile.name : 'Pilih File Template Gambar atau Dokumen (.png, .jpg, .pdf)'}</div>
+                                    <span class="text-xs text-muted font-mono" style="font-size:0.7rem;">${s.templateFile ? (s.templateFile.size / 1024).toFixed(0) + ' KB' : 'Maks. 25 MB'}</span>
+                                    <input type="file" id="wiz-tpl-file-input" accept=".png,.jpg,.jpeg,.pdf" style="display:none;" onchange="handleWizardTemplateFileSelect(this)">
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Preview Box Mini -->
+                <div class="p-3 border rounded text-xs" style="background:#f8fafc; border-color:#e2e8f0; display:flex; align-items:center; justify-content:space-between;">
+                    <div class="flex items-center gap-2 text-dark font-medium">
+                        <i class="ph-fill ph-medal text-accent" style="font-size:1.2rem;"></i>
+                        <span>Instansi Penerbit: <strong>PT ANTAM (PERSERO) TBK — Site Pongkor</strong></span>
+                    </div>
+                    <span class="tag tag-teal">Masa Berlaku: 3 Tahun</span>
+                </div>
+            </div>
+        `;
+
+        footerButtons = `
+            <button type="button" class="btn-light" onclick="goActivityWizardStep(1)">
+                <i class="ph-bold ph-arrow-left"></i>
+                <span>Kembali</span>
+            </button>
+            <button type="button" class="btn-dark" onclick="goActivityWizardStep(3)">
+                <span>Lanjutkan: Notifikasi Persetujuan</span>
+                <i class="ph-bold ph-arrow-right"></i>
+            </button>
+        `;
+    } else if (s.step === 3) {
+        stepContent = `
+            <div class="wizard-step-body">
+                <p class="text-xs text-muted mb-3" style="line-height: 1.5;">
+                    Langkah 3: Periksa ringkasan usulan kegiatan & alur persetujuan admin.
+                </p>
+
+                <!-- Ringkasan Usulan -->
+                <div class="p-3 border rounded mb-3" style="background:#ffffff; border-color:#e2e8f0;">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b">
+                        <span class="tag tag-teal text-xs">${escapeHtml(s.category)}</span>
+                        <span class="tag tag-gray text-xs font-mono"><i class="ph-fill ph-clock"></i> ${escapeHtml(s.duration)}</span>
+                    </div>
+                    <h4 class="font-bold text-base text-dark mb-1">${escapeHtml(s.title)}</h4>
+                    <p class="text-xs text-muted mb-2">${escapeHtml(s.notes || 'Usulan pelatihan operasional site.')}</p>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t" style="display:grid; grid-template-columns:1fr 1fr;">
+                        <div><strong class="text-muted">Target Selesai:</strong> <span class="font-mono text-dark">${escapeHtml(s.deadline)}</span></div>
+                        <div><strong class="text-muted">Template Sertifikat:</strong> <span class="text-green font-semibold">${s.templateFile ? 'Kustom (' + s.templateFile.name + ')' : 'Standar Resmi ANTAM Gold'}</span></div>
+                    </div>
+                </div>
+
+                <!-- Notifikasi Persetujuan Box -->
+                <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:0.85rem 1rem; color:#166534; font-size:0.775rem; line-height:1.45;">
+                    <div class="flex items-center gap-2 mb-1" style="font-weight:700; font-size:0.825rem; color:#15803d;">
+                        <i class="ph-fill ph-bell-ringing" style="font-size:1.15rem;"></i>
+                        <span>Notifikasi Persetujuan Otomatis</span>
+                    </div>
+                    Usulan kegiatan ini akan langsung dikirimkan ke <strong>Learning Ops Admin Console</strong>. Segera setelah admin mengonfirmasi, kegiatan akan aktif dan Anda dapat langsung mengunggah daftar absensi karyawan untuk menerbitkan sertifikat otomatis.
+                </div>
+            </div>
+        `;
+
+        footerButtons = `
+            <button type="button" class="btn-light" onclick="goActivityWizardStep(2)">
+                <i class="ph-bold ph-arrow-left"></i>
+                <span>Kembali</span>
+            </button>
+            <button type="button" class="btn-dark" id="btn-submit-wizard-act" onclick="submitNewActivityWizard()">
+                <i class="ph-fill ph-paper-plane-tilt"></i>
+                <span>Kirim Pengajuan ke Admin</span>
+            </button>
+        `;
+    }
+
+    const fullBodyHtml = `
+        <div class="modal-new-activity-wizard">
+            ${stepsHeader}
+            ${stepContent}
+        </div>
+    `;
+
+    openModal('Ajukan Kegiatan Pembelajaran Baru', fullBodyHtml, footerButtons, 'ph-fill ph-plus-circle');
+}
+
+function submitNewActivityWizard() {
+    const s = newActWizard;
+    const submitBtn = document.getElementById('btn-submit-wizard-act');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Mengirim Pengajuan...';
+    }
+
+    const fd = new FormData();
+    fd.append('action', 'add_activity');
+    fd.append('title', s.title);
+    fd.append('category', s.category);
+    fd.append('type', s.type);
+    fd.append('duration', s.duration);
+    fd.append('deadline', s.deadline);
+    fd.append('notes', s.notes);
+    if (s.templateFile) {
+        fd.append('template_file', s.templateFile);
+    }
+
+    fetch('api.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                closeModal();
+                if (typeof playNotificationSound === 'function') {
+                    playNotificationSound('success');
+                }
+                showToast(`✅ Usulan kegiatan "${s.title}" berhasil diajukan! Notifikasi otomatis terkirim ke Admin Learning Ops.`, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="ph-fill ph-paper-plane-tilt"></i> Kirim Pengajuan ke Admin';
+                }
+                showToast(res.message || 'Gagal mengajukan kegiatan.', 'error');
+            }
+        })
+        .catch(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="ph-fill ph-paper-plane-tilt"></i> Kirim Pengajuan ke Admin';
+            }
+            showToast('Terjadi kesalahan saat mengirim pengajuan.', 'error');
+        });
+}
+
+// Backward-compatible alias
+function submitNewActivity() {
+    submitNewActivityWizard();
+}
+
+// ==========================================
+// L. PENYELESAIAN KEGIATAN: UPLOAD ABSENSI & AUTO-GENERATE SERTIFIKAT KARYAWAN
+// ==========================================
+let selectedAttendanceFile = null;
+
+function openCompleteActivityAttendanceModal(activityId, courseTitle, certTemplate = '') {
+    selectedAttendanceFile = null;
+    const cleanCourse = courseTitle || 'Pelatihan K3';
+
+    // Daftar karyawan site pongkor
+    const employees = [
+        { username: 'egy', name: 'Egy Pratama', role: 'Operasional Tambang Underground', nrp: 'ANTAM-08912' },
+        { username: 'budi', name: 'Budi Santoso', role: 'Processing Plant & Smelter', nrp: 'ANTAM-07844' },
+        { username: 'andi', name: 'Andi Wijaya', role: 'Logistik Handak & Gudang', nrp: 'ANTAM-06519' }
+    ];
+
+    const empCheckboxes = employees.map(emp => `
+        <label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 text-xs mb-1" style="background:#fff; border-color:#e2e8f0; display:flex; align-items:center; justify-content:space-between;">
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="attendance_attendees" value="${emp.name}" checked class="form-checkbox" style="width:16px; height:16px; accent-color:#0f766e;">
+                <div>
+                    <strong class="text-dark block" style="font-size:0.8rem;">${emp.name}</strong>
+                    <span class="text-muted font-mono" style="font-size:0.7rem;">${emp.role} · ${emp.nrp}</span>
+                </div>
+            </div>
+            <span class="tag tag-teal text-xs">Hadir di Absensi</span>
+        </label>
+    `).join('');
+
+    const templateBadge = certTemplate 
+        ? `<span class="tag tag-teal font-mono text-xs"><i class="ph-fill ph-image"></i> Template Khusus: ${certTemplate}</span>`
+        : `<span class="tag tag-amber font-mono text-xs"><i class="ph-fill ph-medal"></i> Template Standar Resmi PT ANTAM</span>`;
+
     const bodyHtml = `
-        <div class="modal-new-activity-form">
-            <p class="text-xs text-muted mb-3" style="line-height: 1.5;">
-                Ajukan kegiatan pembelajaran atau pelatihan baru. Usulan akan dikirim ke Learning Ops Admin untuk divalidasi dan disetujui sebelum aktif di My Learning Track.
-            </p>
+        <div class="complete-act-modal-body">
+            <div class="p-3 mb-3 border rounded text-xs" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534; line-height:1.45;">
+                <i class="ph-fill ph-seal-check" style="font-size:1.2rem; vertical-align:middle;"></i>
+                <strong>Penyelesaian Kegiatan:</strong> Unggah berkas daftar absensi peserta yang telah mengikuti kegiatan. Sistem akan otomatis membuat dan menerbitkan E-Sertifikat resmi untuk setiap karyawan yang hadir.
+            </div>
 
+            <div class="p-2 mb-3 bg-gray-50 border rounded text-xs flex items-center justify-between flex-wrap gap-2" style="background:#f8fafc;">
+                <div>
+                    <span class="text-muted block text-xs">Kegiatan:</span>
+                    <strong class="text-dark text-sm">${cleanCourse}</strong>
+                </div>
+                <div>${templateBadge}</div>
+            </div>
+
+            <!-- Upload Dokumen Absensi -->
             <div class="form-group mb-3">
-                <label class="text-xs font-semibold text-muted font-mono uppercase">Nama Kegiatan / Modul Pelatihan *</label>
-                <input type="text" id="new-act-title" class="form-input mt-1" placeholder="cth. Operasional Dump Truck Bawah Tanah" required>
-            </div>
-
-            <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label class="text-xs font-semibold text-muted font-mono uppercase">Kategori Kompetensi *</label>
-                    <select id="new-act-category" class="form-input mt-1">
-                        <option value="K3 & Keselamatan Tambang">K3 & Keselamatan Tambang</option>
-                        <option value="Operasional Tambang">Operasional Tambang</option>
-                        <option value="Regulasi ESDM">Regulasi ESDM</option>
-                        <option value="Teknik Pengolahan">Teknik Pengolahan & Smelter</option>
-                        <option value="Leadership & Supervisi">Leadership & Supervisi</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="text-xs font-semibold text-muted font-mono uppercase">Tipe Kurikulum *</label>
-                    <select id="new-act-type" class="form-input mt-1">
-                        <option value="Wajib K3">Wajib K3 Site</option>
-                        <option value="Pengembangan Mandiri" selected>Pengembangan Mandiri</option>
-                        <option value="Sertifikasi">Sertifikasi Resmi</option>
-                    </select>
+                <label class="form-label font-semibold text-xs text-muted uppercase">1. Unggah Berkas Daftar Hadir / Absensi (.pdf, .xlsx, .docx, .png, .jpg)</label>
+                <div class="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:bg-gray-50" 
+                     id="attend-dropzone" 
+                     onclick="document.getElementById('attend-file-input').click()"
+                     style="border-color:#0f766e; background:#f0fdfa;">
+                    <i class="ph-fill ph-clipboard-text text-accent" style="font-size: 2.2rem; display:block; margin: 0 auto 0.25rem;"></i>
+                    <div class="text-xs font-semibold text-dark" id="attend-title">Klik atau Tarik File Absensi ke Sini</div>
+                    <div class="text-xs text-muted" id="attend-sub">Format: Scan tanda tangan PDF/Foto presensi atau file Excel</div>
+                    <input type="file" id="attend-file-input" accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg" style="display:none;" onchange="handleAttendanceFileSelect(this)">
                 </div>
             </div>
 
-            <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label class="text-xs font-semibold text-muted font-mono uppercase">Estimasi Durasi *</label>
-                    <input type="text" id="new-act-duration" class="form-input mt-1" value="2 Hari (16 Jam)" placeholder="cth. 2 Hari (16 Jam)">
+            <!-- Daftar Karyawan yang Mengikuti Kegiatan -->
+            <div class="form-group mb-3">
+                <div class="flex items-center justify-between mb-1">
+                    <label class="form-label font-semibold text-xs text-muted uppercase">2. Centang Karyawan yang Hadir di Absensi *</label>
+                    <span class="text-xs text-accent cursor-pointer" onclick="toggleSelectAllAttendance(this)">Pilih Semua</span>
+                </div>
+                <div class="attendance-emp-list p-2 border rounded" style="background:#f8fafc; max-height:150px; overflow-y:auto;">
+                    ${empCheckboxes}
                 </div>
 
-                <div class="form-group">
-                    <label class="text-xs font-semibold text-muted font-mono uppercase">Target Tanggal Selesai *</label>
-                    <input type="text" id="new-act-deadline" class="form-input mt-1" value="${defaultDeadline}" placeholder="cth. 26 Agu 2026">
+                <div class="mt-2">
+                    <label class="text-xs text-muted font-semibold block mb-1">+ Tambah Nama Karyawan Lapangan Lainnya (1 nama per baris):</label>
+                    <textarea id="attend-extra-names" class="form-input text-xs" rows="2" placeholder="Contoh:&#10;Rian Setiawan&#10;Dewi Sartika"></textarea>
                 </div>
-            </div>
-
-            <div class="form-group mb-2">
-                <label class="text-xs font-semibold text-muted font-mono uppercase">Alasan Kebutuhan Pelatihan</label>
-                <textarea id="new-act-notes" class="form-input mt-1" rows="3" placeholder="Jelaskan relevansi kegiatan ini terhadap tugas dan keselamatan kerja Anda di site..."></textarea>
             </div>
         </div>
     `;
 
     const footerHtml = `
-        <button class="btn-light" onclick="closeModal()">Batal</button>
-        <button class="btn-dark" onclick="submitNewActivity()">
-            <i class="ph-fill ph-paper-plane-tilt"></i>
-            <span>Kirim Pengajuan ke Admin</span>
+        <button type="button" class="btn-light" onclick="closeModal()">Batal</button>
+        <button type="button" class="btn-dark" id="btn-submit-attend" onclick="submitCompleteActivityAttendance('${activityId}', '${addslashesJs(cleanCourse)}')">
+            <i class="ph-fill ph-seal-check"></i> Selesaikan Kegiatan &amp; Terbitkan Sertifikat
         </button>
     `;
 
-    openModal('Ajukan Kegiatan Pembelajaran Baru', bodyHtml, footerHtml, 'ph-fill ph-plus-circle');
+    openModal('Selesaikan Kegiatan & Unggah Daftar Absensi', bodyHtml, footerHtml, 'ph-fill ph-clipboard-text');
 }
 
-function openNewActivityModalWithPreset(title, type, category, duration, level) {
-    openNewActivityModal();
-    setTimeout(() => {
-        const titleInput = document.getElementById('new-act-title');
-        const typeInput = document.getElementById('new-act-type');
-        const catInput = document.getElementById('new-act-category');
-        const durInput = document.getElementById('new-act-duration');
-        const notesInput = document.getElementById('new-act-notes');
-
-        if (titleInput) titleInput.value = title;
-        if (durInput && duration) durInput.value = duration;
-        if (notesInput) notesInput.value = `Pengajuan dari rekomendasi LNA: ${title} (${level}). Diperlukan untuk peningkatan kompetensi operasional site.`;
-        
-        if (typeInput) {
-            for (let i = 0; i < typeInput.options.length; i++) {
-                if (typeInput.options[i].value.toLowerCase().includes(type.toLowerCase())) {
-                    typeInput.selectedIndex = i;
-                    break;
-                }
-            }
+function handleAttendanceFileSelect(input) {
+    if (input.files && input.files[0]) {
+        selectedAttendanceFile = input.files[0];
+        const titleEl = document.getElementById('attend-title');
+        const subEl = document.getElementById('attend-sub');
+        if (titleEl) {
+            titleEl.innerHTML = `<span style="color:#0f766e; font-weight:700;"><i class="ph-fill ph-check-circle"></i> Berkas Absensi: ${selectedAttendanceFile.name}</span>`;
         }
-        if (catInput) {
-            for (let i = 0; i < catInput.options.length; i++) {
-                if (catInput.options[i].value.toLowerCase().includes(category.toLowerCase())) {
-                    catInput.selectedIndex = i;
-                    break;
-                }
-            }
+        if (subEl) {
+            subEl.textContent = `${(selectedAttendanceFile.size / 1024).toFixed(0)} KB · Berkas absensi siap diproses`;
         }
-    }, 150);
+        showToast(`Berkas absensi "${selectedAttendanceFile.name}" berhasil dipilih.`, 'success');
+    }
 }
 
-async function submitNewActivity() {
-    const title = document.getElementById('new-act-title').value.trim();
-    const category = document.getElementById('new-act-category').value;
-    const type = document.getElementById('new-act-type').value;
-    const duration = document.getElementById('new-act-duration').value.trim();
-    const deadline = document.getElementById('new-act-deadline').value.trim();
-    const notes = document.getElementById('new-act-notes').value.trim();
+function toggleSelectAllAttendance(btn) {
+    const checkboxes = document.querySelectorAll('input[name="attendance_attendees"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    btn.textContent = allChecked ? 'Pilih Semua' : 'Batal Semua';
+}
 
-    if (!title) {
-        showToast('Nama kegiatan wajib diisi!', 'warning');
+function submitCompleteActivityAttendance(activityId, courseTitle) {
+    const checked = Array.from(document.querySelectorAll('input[name="attendance_attendees"]:checked')).map(cb => cb.value.trim());
+    const extraEl = document.getElementById('attend-extra-names');
+    if (extraEl && extraEl.value.trim()) {
+        const extraNames = extraEl.value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        checked.push(...extraNames);
+    }
+
+    if (checked.length === 0) {
+        showToast('Pilih atau masukkan minimal 1 nama karyawan yang hadir pada absensi!', 'warning');
         return;
     }
 
-    const fd = new FormData();
-    fd.append('action', 'add_activity');
-    fd.append('title', title);
-    fd.append('category', category);
-    fd.append('type', type);
-    fd.append('duration', duration || '2 Hari (16 Jam)');
-    fd.append('deadline', deadline || '14 Hari');
-    fd.append('notes', notes || 'Usulan kegiatan pembelajaran baru.');
-
-    try {
-        const resp = await fetch('api.php', { method: 'POST', body: fd });
-        const res = await resp.json();
-
-        if (res.success) {
-            closeModal();
-            playNotificationSound('success');
-            showToast(`✅ Usulan kegiatan "${title}" berhasil diajukan! Notifikasi otomatis terkirim ke Admin Learning Ops.`, 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showToast(res.message || 'Gagal mengajukan kegiatan.', 'error');
-        }
-    } catch (e) {
-        showToast('Terjadi kesalahan saat mengirim pengajuan.', 'error');
+    const submitBtn = document.getElementById('btn-submit-attend');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Memproses Absensi & Sertifikat...';
     }
+
+    const fd = new FormData();
+    fd.append('action', 'complete_activity_with_attendance');
+    fd.append('activity_id', activityId);
+    fd.append('course_title', courseTitle);
+    fd.append('attendees', JSON.stringify(checked));
+    if (selectedAttendanceFile) {
+        fd.append('attendance_file', selectedAttendanceFile);
+    }
+
+    fetch('api.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="ph-fill ph-seal-check"></i> Selesaikan Kegiatan &amp; Terbitkan Sertifikat';
+            }
+
+            if (res.success) {
+                if (typeof playNotificationSound === 'function') {
+                    playNotificationSound('success');
+                }
+                showToast(`🎉 Sukses! Kegiatan selesai dan ${res.count} sertifikat resmi diterbitkan otomatis!`, 'success');
+                showBatchResultsModal(res);
+            } else {
+                showToast(res.message || 'Gagal memproses absensi.', 'error');
+            }
+        })
+        .catch(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="ph-fill ph-seal-check"></i> Selesaikan Kegiatan &amp; Terbitkan Sertifikat';
+            }
+            showToast('Terjadi gangguan jaringan. Coba lagi.', 'error');
+        });
 }
 
 async function adminConfirmActivity(activityId, decision = 'setujui', title = 'Kegiatan', employeeName = 'Pegawai') {

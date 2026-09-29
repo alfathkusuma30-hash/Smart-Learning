@@ -87,6 +87,22 @@ $users = get_all_users();
                     <h3 class="font-semibold text-lg text-dark mt-2 mb-1"><?php echo htmlspecialchars($req['title']); ?></h3>
                     <p class="text-sm text-muted"><strong>Catatan Pegawai:</strong> <?php echo htmlspecialchars($req['notes']); ?></p>
                     <div class="text-xs text-muted font-mono mt-2"><i class="ph-fill ph-calendar"></i> Target Deadline: <strong><?php echo htmlspecialchars($req['deadline']); ?></strong></div>
+                    <?php if (!empty($req['cert_template'])): ?>
+                    <div class="mt-2 text-xs font-mono" style="color: #0f766e; background: #f0fdfa; border: 1px solid #ccfbf1; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                        <span class="flex items-center gap-1.5">
+                            <i class="ph-fill ph-file-image text-accent" style="font-size:1.1rem;"></i>
+                            <span>Template Sertifikat Kustom: <strong><?php echo htmlspecialchars($req['cert_template']); ?></strong></span>
+                        </span>
+                        <a href="uploads/templates/<?php echo htmlspecialchars($req['cert_template']); ?>" target="_blank" class="tag tag-teal text-xs" style="text-decoration:none; padding: 2px 8px;">
+                            <i class="ph-bold ph-eye"></i> Lihat Berkas
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <div class="mt-2 text-xs font-mono" style="color: #854d0e; background: #fefce8; border: 1px solid #fef08a; padding: 5px 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="ph-fill ph-medal" style="color:#d97706;"></i>
+                        <span>Template Sertifikat: <strong>Standar Resmi PT ANTAM Gold</strong></span>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="flex items-center justify-end gap-2 flex-wrap">
@@ -147,18 +163,22 @@ $users = get_all_users();
                 <tr id="user-row-<?php echo $uKey; ?>">
                     <td>
                         <div class="flex items-center gap-3">
-                            <div class="mini-avatar" style="background: <?php echo $u['avatar_color']; ?>; width: 36px; height: 36px; font-size: 0.85rem; font-weight: 700;">
-                                <?php echo $u['user_id']; ?>
+                            <div class="mini-avatar" style="background: <?php echo htmlspecialchars($u['avatar_color'] ?? '#0f766e'); ?>; width: 36px; height: 36px; font-size: 0.85rem; font-weight: 700;">
+                                <?php echo htmlspecialchars($u['user_id'] ?? strtoupper(substr($u['name'] ?? 'U', 0, 2))); ?>
                             </div>
                             <div>
-                                <div class="font-semibold"><?php echo htmlspecialchars($u['name']); ?></div>
-                                <div class="text-xs text-muted font-mono"><?php echo htmlspecialchars($u['nrp']); ?></div>
+                                <div class="font-semibold"><?php echo htmlspecialchars($u['name'] ?? $uKey); ?></div>
+                                <div class="text-xs text-muted font-mono flex items-center gap-1">
+                                    <span><?php echo htmlspecialchars($u['nrp'] ?? '-'); ?></span>
+                                    <span>•</span>
+                                    <span class="text-green" title="Nomor WhatsApp"><i class="ph-fill ph-whatsapp-logo"></i> <?php echo htmlspecialchars($u['phone'] ?? '0812-3456-7890'); ?></span>
+                                </div>
                             </div>
                         </div>
                     </td>
                     <td>
-                        <div class="text-sm"><?php echo htmlspecialchars($u['role']); ?></div>
-                        <div class="text-xs text-muted"><?php echo htmlspecialchars($u['dept']); ?></div>
+                        <div class="text-sm"><?php echo htmlspecialchars($u['role'] ?? 'Operasional Tambang'); ?></div>
+                        <div class="text-xs text-muted"><?php echo htmlspecialchars($u['dept'] ?? 'PT ANTAM'); ?></div>
                     </td>
                     <td>
                         <div class="flex items-center gap-2">
@@ -185,7 +205,7 @@ $users = get_all_users();
                     </td>
                     <td>
                         <div class="flex gap-2">
-                            <button class="btn-outline text-xs" onclick="sendWhatsAppNudge('<?php echo addslashes($u['name']); ?>', 'Modul K3 Site Pongkor')">
+                            <button class="btn-outline text-xs" onclick="sendWhatsAppNudge('<?php echo addslashes($u['name']); ?>', 'Modul K3 Site Pongkor', null, '<?php echo addslashes($uKey); ?>', '<?php echo addslashes($u['phone'] ?? ''); ?>')">
                                 <i class="ph-fill ph-whatsapp-logo text-green"></i> Nudge WA
                             </button>
                             <button class="btn-outline text-xs" onclick="openAssignModalForUser('<?php echo addslashes($u['name']); ?>')">

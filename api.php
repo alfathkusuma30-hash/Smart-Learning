@@ -41,6 +41,21 @@ switch ($action) {
         $deadline = isset($_POST['deadline']) ? trim($_POST['deadline']) : date('d M Y', strtotime('+14 days'));
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
+        // Handle template file upload if provided
+        $certTemplateName = null;
+        if (isset($_FILES['template_file']) && $_FILES['template_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/uploads/templates/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $origFileName     = basename($_FILES['template_file']['name']);
+            $certTemplateName = 'tpl_' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $origFileName);
+            $targetPath       = $uploadDir . $certTemplateName;
+            if (!@move_uploaded_file($_FILES['template_file']['tmp_name'], $targetPath)) {
+                $certTemplateName = null;
+            }
+        }
+
         $res = add_new_activity([
             'user_username' => $currentUser,
             'user_name' => $_SESSION['user_name'],
@@ -50,7 +65,8 @@ switch ($action) {
             'duration' => $duration,
             'level' => $level,
             'deadline' => $deadline,
-            'notes' => $notes
+            'notes' => $notes,
+            'cert_template' => $certTemplateName
         ]);
 
         echo json_encode($res);
@@ -101,26 +117,43 @@ switch ($action) {
         break;
 
     // 4. Update Profile
+    // 4. Update Profile
     case 'update_profile':
-        $profile = [
-            'name' => isset($_POST['name']) ? trim($_POST['name']) : '',
-            'nrp' => isset($_POST['nrp']) ? trim($_POST['nrp']) : '',
-            'dept' => isset($_POST['dept']) ? trim($_POST['dept']) : '',
-            'email' => isset($_POST['email']) ? trim($_POST['email']) : '',
-            'phone' => isset($_POST['phone']) ? trim($_POST['phone']) : '',
-            'bio' => isset($_POST['bio']) ? trim($_POST['bio']) : '',
-            'avatar_color' => isset($_POST['avatar_color']) ? trim($_POST['avatar_color']) : '',
-            'reminder_freq' => isset($_POST['reminder_freq']) ? trim($_POST['reminder_freq']) : '',
-            'wa_notif' => isset($_POST['wa_notif']) ? ($_POST['wa_notif'] == '1') : true
-        ];
+        $profile = [];
+        $allowedFields = ['name', 'nrp', 'dept', 'email', 'phone', 'bio', 'avatar_color', 'reminder_freq'];
+        foreach ($allowedFields as $f) {
+            if (isset($_POST[$f])) {
+                $profile[$f] = trim($_POST[$f]);
+            }
+        }
+        if (isset($_POST['wa_notif'])) {
+            $profile['wa_notif'] = ($_POST['wa_notif'] === '1' || $_POST['wa_notif'] === 1 || $_POST['wa_notif'] === 'true' || $_POST['wa_notif'] === true);
+        }
+
+        if (empty($profile)) {
+            echo json_encode(['success' => false, 'message' => 'Tidak ada data untuk diperbarui.']);
+            exit();
+        }
+
+        if (isset($profile['name']) && empty($profile['name'])) {
+            echo json_encode(['success' => false, 'message' => 'Nama lengkap wajib diisi.']);
+            exit();
+        }
 
         $res = update_user_profile($currentUser, $profile);
-        if ($res['success']) {
+        if ($res['success'] && isset($res['user'])) {
             // Update active session values
-            $_SESSION['user_name'] = $res['user']['name'];
-            $_SESSION['user_dept'] = $res['user']['dept'];
+            if (!empty($res['user']['name'])) {
+                $_SESSION['user_name'] = $res['user']['name'];
+            }
+            if (!empty($res['user']['dept'])) {
+                $_SESSION['user_dept'] = $res['user']['dept'];
+            }
             if (!empty($res['user']['avatar_color'])) {
                 $_SESSION['avatar_color'] = $res['user']['avatar_color'];
+            }
+            if (!empty($res['user']['role'])) {
+                $_SESSION['user_role'] = $res['user']['role'];
             }
         }
         echo json_encode($res);
@@ -134,6 +167,11 @@ switch ($action) {
 
         if (empty($oldPass) || empty($newPass)) {
             echo json_encode(['success' => false, 'message' => 'Kata sandi lama dan baru wajib diisi.']);
+            exit();
+        }
+
+        if (strlen($newPass) < 5) {
+            echo json_encode(['success' => false, 'message' => 'Kata sandi baru minimal 5 karakter.']);
             exit();
         }
 
@@ -219,7 +257,138 @@ switch ($action) {
         echo json_encode($res);
         break;
 
-    // 9. Get User Certificates
+    // Sederhana: Selesaikan pelatihan & klaim sertifikat resmi langsung
+    case 'claim_certificate':
+        $activityId  = isset($_POST['activity_id']) ? trim($_POST['activity_id']) : '';
+        $courseTitle = isset($_POST['course_title']) ? trim($_POST['course_title']) : '';
+        $targetId    = !empty($activityId) ? $activityId : $courseTitle;
+
+        if (empty($targetId)) {
+            echo json_encode(['success' => false, 'message' => 'ID atau judul kegiatan tidak valid.']);
+            exit();
+        }
+
+        $res = claim_activity_certificate($targetId, $currentUser);
+        echo json_encode($res);
+        break;
+
+    // 9. Upload External Certificate
+    case 'upload_external_certificate':
+        $title      = isset($_POST['title']) ? trim($_POST['title']) : '';
+        $regNo      = isset($_POST['reg_no']) ? trim($_POST['reg_no']) : '';
+        $issuedBy   = isset($_POST['issued_by']) ? trim($_POST['issued_by']) : 'Lembaga Sertifikasi Eksternal';
+        $validUntil = isset($_POST['valid_until']) ? trim($_POST['valid_until']) : date('Y-m-d', strtotime('+3 years'));
+        $score      = isset($_POST['score']) ? (int)$_POST['score'] : 100;
+
+        if (empty($title)) {
+            echo json_encode(['success' => false, 'message' => 'Nama/judul sertifikat wajib diisi.']);
+            exit();
+        }
+
+        // Handle physical file upload if provided
+        $attachmentName = '';
+        if (isset($_FILES['cert_file']) && $_FILES['cert_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/uploads/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $origFileName = basename($_FILES['cert_file']['name']);
+            $safeFileName = 'cert_' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $origFileName);
+            $targetPath   = $uploadDir . $safeFileName;
+            if (@move_uploaded_file($_FILES['cert_file']['tmp_name'], $targetPath)) {
+                $attachmentName = $safeFileName;
+            }
+        }
+
+        $res = save_external_certificate($currentUser, $title, $regNo, $issuedBy, $validUntil, $score, $attachmentName);
+        echo json_encode($res);
+        break;
+
+    // 10. Upload Template Sertifikat & Generate Batch untuk Peserta Kegiatan
+    case 'batch_generate_certificates':
+        $courseTitle = isset($_POST['course_title']) ? trim($_POST['course_title']) : '';
+        $issuer      = isset($_POST['issued_by']) ? trim($_POST['issued_by']) : 'PT ANTAM (PERSERO) TBK';
+
+        // Parse participants list (array JSON atau comma/newline separated)
+        $rawParticipants = isset($_POST['participants']) ? $_POST['participants'] : [];
+        if (is_string($rawParticipants)) {
+            $decoded = json_decode($rawParticipants, true);
+            if (is_array($decoded)) {
+                $rawParticipants = $decoded;
+            } else {
+                $rawParticipants = preg_split('/[\r\n,]+/', $rawParticipants);
+            }
+        }
+        $participants = array_filter(array_map('trim', (array)$rawParticipants));
+
+        if (empty($courseTitle)) {
+            echo json_encode(['success' => false, 'message' => 'Judul kegiatan pelatihan wajib diisi.']);
+            exit();
+        }
+        if (empty($participants)) {
+            echo json_encode(['success' => false, 'message' => 'Pilih atau masukkan minimal 1 nama peserta kegiatan.']);
+            exit();
+        }
+
+        // Handle template file upload if uploaded
+        $templateFileName = null;
+        if (isset($_FILES['template_file']) && $_FILES['template_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/uploads/templates/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $origFileName     = basename($_FILES['template_file']['name']);
+            $templateFileName = 'tpl_' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $origFileName);
+            $targetPath       = $uploadDir . $templateFileName;
+            if (!@move_uploaded_file($_FILES['template_file']['tmp_name'], $targetPath)) {
+                $templateFileName = null;
+            }
+        }
+
+        $res = batch_generate_certificates($courseTitle, $participants, $templateFileName, $issuer);
+        echo json_encode($res);
+        break;
+
+    // 10b. Selesaikan Kegiatan dengan Upload Berkas Absensi & Auto-Generate Sertifikat
+    case 'complete_activity_with_attendance':
+        $activityId = isset($_POST['activity_id']) ? trim($_POST['activity_id']) : '';
+        if (empty($activityId)) {
+            echo json_encode(['success' => false, 'message' => 'ID kegiatan tidak valid.']);
+            exit();
+        }
+
+        // Parse attendees list
+        $rawAttendees = isset($_POST['attendees']) ? $_POST['attendees'] : [];
+        if (is_string($rawAttendees)) {
+            $decoded = json_decode($rawAttendees, true);
+            if (is_array($decoded)) {
+                $rawAttendees = $decoded;
+            } else {
+                $rawAttendees = preg_split('/[\r\n,]+/', $rawAttendees);
+            }
+        }
+        $attendees = array_filter(array_map('trim', (array)$rawAttendees));
+
+        // Handle attendance file upload
+        $attendanceFileName = null;
+        if (isset($_FILES['attendance_file']) && $_FILES['attendance_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/uploads/attendance/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $origFileName       = basename($_FILES['attendance_file']['name']);
+            $attendanceFileName = 'absen_' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $origFileName);
+            $targetPath         = $uploadDir . $attendanceFileName;
+            if (!@move_uploaded_file($_FILES['attendance_file']['tmp_name'], $targetPath)) {
+                $attendanceFileName = null;
+            }
+        }
+
+        $res = complete_activity_with_attendance($activityId, $attendees, $attendanceFileName, $currentUser);
+        echo json_encode($res);
+        break;
+
+    // 11. Get User Certificates
     case 'get_certificates':
         $targetUser = ($userType === 'Admin') ? (isset($_GET['username']) ? $_GET['username'] : '') : $currentUser;
         if (empty($targetUser)) {
@@ -249,6 +418,97 @@ switch ($action) {
     case 'check_notifications':
         $res = check_realtime_notifications($currentUser, $userType);
         echo json_encode($res);
+        break;
+
+    // 13. Send WhatsApp Nudge (via Gateway or direct WhatsApp Web)
+    case 'send_whatsapp_nudge':
+        $employeeName = isset($_POST['employee_name']) ? trim($_POST['employee_name']) : '';
+        $courseName   = isset($_POST['course_name']) ? trim($_POST['course_name']) : 'Pelatihan K3 Wajib';
+        $phone        = isset($_POST['phone']) ? trim($_POST['phone']) : '';
+        $savePhone    = !empty($_POST['save_phone']) && ($_POST['save_phone'] === '1' || $_POST['save_phone'] === 'true');
+
+        if (empty($phone)) {
+            echo json_encode(['success' => false, 'message' => 'Nomor WhatsApp penerima wajib diisi.']);
+            exit();
+        }
+
+        // Simpan nomor ke profil user jika diminta
+        if ($savePhone && !empty($employeeName)) {
+            update_user_phone($employeeName, $phone);
+        }
+
+        // Format nomor untuk WhatsApp (standar internasional 62...)
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (strpos($cleanPhone, '0') === 0) {
+            $cleanPhone = '62' . substr($cleanPhone, 1);
+        } elseif (strpos($cleanPhone, '8') === 0) {
+            $cleanPhone = '62' . $cleanPhone;
+        }
+
+        // Format pesan resmi bot korporat
+        $messageText = "*[PT ANTAM — SMART LEARNING ALARM]*\n"
+                     . "Yth. Sdr. *" . $employeeName . "*,\n\n"
+                     . "Modul wajib: _\"" . $courseName . "\"_ telah mencapai batas waktu. Harap segera mengakses portal Smart Learning sebelum akses site dibekukan.\n\n"
+                     . "Tautan: https://learning.antam.com/auth?token=auth" . rand(1000, 9999) . "\n"
+                     . "_— Learning & Development_";
+
+        $waUrl = "https://api.whatsapp.com/send?phone=" . $cleanPhone . "&text=" . rawurlencode($messageText);
+
+        $cfg = get_gateway_config();
+        $token = $cfg['token'] ?? '';
+        $autoSend = !empty($cfg['auto_send']);
+
+        // Cek jika gateway token terpasang dan auto_send aktif
+        if (!empty($token) && $autoSend) {
+            $gatewayRes = send_whatsapp_via_gateway($cleanPhone, $messageText, $token);
+            if ($gatewayRes['success']) {
+                echo json_encode([
+                    'success' => true,
+                    'mode' => 'gateway',
+                    'phone' => $cleanPhone,
+                    'message' => 'Pesan otomatis berhasil dikirim ke ' . $cleanPhone . ' melalui WhatsApp Gateway Bot ANTAM.'
+                ]);
+                exit();
+            }
+        }
+
+        // Default atau fallback: kembalikan URL direct WhatsApp Web/App
+        echo json_encode([
+            'success' => true,
+            'mode' => 'direct',
+            'phone' => $cleanPhone,
+            'wa_url' => $waUrl,
+            'message' => 'Pesan disiapkan untuk dikirim ke ' . $cleanPhone
+        ]);
+        break;
+
+    // 14. Save Gateway Config
+    case 'save_gateway_config':
+        if ($userType !== 'Admin') {
+            echo json_encode(['success' => false, 'message' => 'Hanya Admin yang dapat mengubah konfigurasi gateway.']);
+            exit();
+        }
+        $token = isset($_POST['token']) ? trim($_POST['token']) : '';
+        $provider = isset($_POST['provider']) ? trim($_POST['provider']) : 'fonnte';
+        $autoSend = !empty($_POST['auto_send']) && ($_POST['auto_send'] === '1' || $_POST['auto_send'] === 'true');
+
+        $ok = save_gateway_config([
+            'provider' => $provider,
+            'token' => $token,
+            'auto_send' => $autoSend,
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+
+        echo json_encode([
+            'success' => $ok,
+            'message' => $ok ? 'Konfigurasi WhatsApp Gateway berhasil disimpan.' : 'Gagal menyimpan konfigurasi.'
+        ]);
+        break;
+
+    // 15. Get Gateway Config
+    case 'get_gateway_config':
+        $cfg = get_gateway_config();
+        echo json_encode(['success' => true, 'config' => $cfg]);
         break;
 
     default:

@@ -1,11 +1,23 @@
 <?php
-$username = $_SESSION['username'];
+$username = $_SESSION['username'] ?? '';
 $user = get_user_by_username($username);
 
 if (!$user) {
-    echo "<div class='p-6 text-center text-red'>Data pengguna tidak ditemukan.</div>";
+    echo "<div class='p-6 text-center text-red font-semibold'>Data pengguna tidak ditemukan. Silakan login kembali.</div>";
     return;
 }
+
+// Inisial avatar pengguna
+$initials = !empty($user['user_id']) ? $user['user_id'] : '';
+if (empty($initials)) {
+    $nameParts = explode(' ', trim($user['name'] ?? ''));
+    if (count($nameParts) > 1 && !empty($nameParts[0]) && !empty($nameParts[1])) {
+        $initials = strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1));
+    } else {
+        $initials = strtoupper(substr($user['name'] ?? $username, 0, 2));
+    }
+}
+$avatarColor = !empty($user['avatar_color']) ? $user['avatar_color'] : '#0f766e';
 ?>
 
 <div class="settings-container">
@@ -13,8 +25,9 @@ if (!$user) {
         <div>
             <div class="flex items-center gap-2">
                 <h1 class="page-title">Pengaturan Akun & Keamanan</h1>
-                <span class="badge-role-tag"><?php echo strtoupper($user['type']); ?></span>
+                <span class="badge-role-tag"><?php echo strtoupper(htmlspecialchars($user['type'] ?? 'USER')); ?></span>
             </div>
+            <p class="text-xs text-muted mt-1">Kelola data profil personel, kredensial login, dan preferensi alarm K3</p>
         </div>
         <div class="page-top-actions">
             <span class="status-chip-live">
@@ -27,17 +40,17 @@ if (!$user) {
     <!-- User Mini Profile Banner -->
     <div class="settings-profile-banner glass-panel mb-6">
         <div class="flex items-center gap-4 flex-wrap">
-            <div class="settings-avatar-preview" id="settings-avatar-circle" style="background: <?php echo htmlspecialchars($user['avatar_color']); ?>;">
-                <?php echo htmlspecialchars($user['user_id']); ?>
+            <div class="settings-avatar-preview" id="settings-avatar-circle" style="background: <?php echo htmlspecialchars($avatarColor); ?>;">
+                <?php echo htmlspecialchars($initials); ?>
             </div>
             <div>
-                <h2 class="text-xl font-bold" id="banner-user-name"><?php echo htmlspecialchars($user['name']); ?></h2>
+                <h2 class="text-xl font-bold" id="banner-user-name"><?php echo htmlspecialchars($user['name'] ?? $username); ?></h2>
                 <div class="flex items-center gap-3 text-xs text-muted mt-1 flex-wrap font-mono">
-                    <span><i class="ph-fill ph-identification-card"></i> NRP: <?php echo htmlspecialchars($user['nrp']); ?></span>
+                    <span><i class="ph-fill ph-identification-card"></i> NRP: <span id="banner-user-nrp"><?php echo htmlspecialchars($user['nrp'] ?? '-'); ?></span></span>
                     <span>•</span>
-                    <span><i class="ph-fill ph-hard-hat"></i> <?php echo htmlspecialchars($user['role']); ?></span>
+                    <span><i class="ph-fill ph-hard-hat"></i> <span id="banner-user-role"><?php echo htmlspecialchars($user['role'] ?? 'Operasional Tambang'); ?></span></span>
                     <span>•</span>
-                    <span><i class="ph-fill ph-buildings"></i> <?php echo htmlspecialchars($user['dept']); ?></span>
+                    <span><i class="ph-fill ph-buildings"></i> <span id="banner-user-dept"><?php echo htmlspecialchars($user['dept'] ?? 'PT ANTAM Tbk'); ?></span></span>
                 </div>
             </div>
         </div>
@@ -60,50 +73,50 @@ if (!$user) {
     <div id="tab-profile" class="tab-settings-panel active">
         <div class="glass-panel" style="background: white; border-radius: var(--radius-md); padding: 2rem;">
             <form id="form-profile-settings" onsubmit="handleSaveProfile(event)">
-                <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
                     
                     <div class="form-group">
                         <label class="form-label font-semibold text-xs text-muted uppercase">Nama Lengkap *</label>
-                        <input type="text" id="profile-name" class="form-input mt-1" value="<?php echo htmlspecialchars($user['name']); ?>" required>
+                        <input type="text" id="profile-name" class="form-input mt-1" value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" required>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label font-semibold text-xs text-muted uppercase">NRP / ID Pegawai</label>
-                        <input type="text" id="profile-nrp" class="form-input mt-1" value="<?php echo htmlspecialchars($user['nrp']); ?>" placeholder="cth. ANTAM-08912">
+                        <input type="text" id="profile-nrp" class="form-input mt-1" value="<?php echo htmlspecialchars($user['nrp'] ?? ''); ?>" placeholder="cth. ANTAM-08912">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label font-semibold text-xs text-muted uppercase">Departemen / Unit Kerja</label>
-                        <input type="text" id="profile-dept" class="form-input mt-1" value="<?php echo htmlspecialchars($user['dept']); ?>">
+                        <input type="text" id="profile-dept" class="form-input mt-1" value="<?php echo htmlspecialchars($user['dept'] ?? ''); ?>" placeholder="cth. Mining Operations Underground">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label font-semibold text-xs text-muted uppercase">Email Korporat</label>
-                        <input type="email" id="profile-email" class="form-input mt-1" value="<?php echo htmlspecialchars($user['email']); ?>" placeholder="nama@antam.com">
+                        <input type="email" id="profile-email" class="form-input mt-1" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" placeholder="nama@antam.com">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label font-semibold text-xs text-muted uppercase">No. WhatsApp / Telepon</label>
-                        <input type="tel" id="profile-phone" class="form-input mt-1" value="<?php echo htmlspecialchars($user['phone']); ?>" placeholder="0812-xxxx-xxxx">
+                        <input type="tel" id="profile-phone" class="form-input mt-1" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="0812-xxxx-xxxx">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label font-semibold text-xs text-muted uppercase">Warna Tema Avatar</label>
                         <div class="color-picker-row mt-1 flex items-center gap-3">
-                            <input type="color" id="profile-avatar-color" value="<?php echo htmlspecialchars($user['avatar_color']); ?>" onchange="previewAvatarColor(this.value)" class="color-input">
-                            <span class="text-xs text-muted">Pilih warna aksen lencana profil</span>
+                            <input type="color" id="profile-avatar-color" value="<?php echo htmlspecialchars($avatarColor); ?>" onchange="previewAvatarColor(this.value)" class="color-input">
+                            <span class="text-xs text-muted">Pilih warna aksen lencana profil Anda</span>
                         </div>
                     </div>
 
-                    <div class="form-group full-width" style="grid-column: span 2;">
+                    <div class="form-group full-width" style="grid-column: 1 / -1;">
                         <label class="form-label font-semibold text-xs text-muted uppercase">Deskripsi / Catatan Kompetensi</label>
-                        <textarea id="profile-bio" class="form-input mt-1" rows="3" placeholder="Fokus kompetensi lapangan atau sertifikasi yang sedang dikejar..."><?php echo htmlspecialchars($user['bio']); ?></textarea>
+                        <textarea id="profile-bio" class="form-input mt-1" rows="3" placeholder="Fokus kompetensi lapangan atau sertifikasi yang sedang dikejar..."><?php echo htmlspecialchars($user['bio'] ?? ''); ?></textarea>
                     </div>
 
                 </div>
 
-                <div class="flex items-center justify-between mt-6 pt-4 border-t">
-                    <span class="text-xs text-muted"><i class="ph-fill ph-info"></i> Perubahan profil langsung disimpan ke sistem pusat PT ANTAM.</span>
+                <div class="flex items-center justify-between mt-6 pt-4 border-t flex-wrap gap-3">
+                    <span class="text-xs text-muted"><i class="ph-fill ph-info"></i> Perubahan profil langsung disinkronkan ke sistem Smart Learning ANTAM.</span>
                     <button type="submit" class="btn-dark" id="btn-save-profile">
                         <i class="ph-fill ph-floppy-disk"></i>
                         <span>Simpan Perubahan Profil</span>
@@ -125,28 +138,38 @@ if (!$user) {
                 <div class="form-group mb-4">
                     <label class="form-label font-semibold text-xs text-muted uppercase">Kata Sandi Saat Ini *</label>
                     <div class="input-with-icon password-input-wrap mt-1">
-                        <input type="password" id="old-password" class="form-input" placeholder="Masukkan kata sandi saat ini" required>
+                        <input type="password" id="old-password" class="form-input" placeholder="Masukkan kata sandi saat ini" required autocomplete="current-password">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('old-password', this)" title="Lihat kata sandi">
+                            <i class="ph ph-eye"></i>
+                        </button>
                     </div>
                 </div>
 
                 <div class="form-group mb-4">
                     <label class="form-label font-semibold text-xs text-muted uppercase">Kata Sandi Baru *</label>
                     <div class="input-with-icon password-input-wrap mt-1">
-                        <input type="password" id="new-password" class="form-input" placeholder="Minimal 5 karakter" required onkeyup="checkPasswordStrength(this.value)">
+                        <input type="password" id="new-password" class="form-input" placeholder="Minimal 5 karakter" required minlength="5" onkeyup="checkPasswordStrength(this.value)" autocomplete="new-password">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('new-password', this)" title="Lihat kata sandi">
+                            <i class="ph ph-eye"></i>
+                        </button>
                     </div>
                     <div class="password-strength-indicator mt-2" id="pass-strength-bar" style="height: 4px; border-radius: 4px; background: #e2e8f0; width: 100%;">
                         <div id="pass-strength-fill" style="width: 0%; height: 100%; transition: all 0.3s; border-radius: 4px;"></div>
                     </div>
+                    <span id="pass-strength-text" class="text-xs text-muted mt-1 block"></span>
                 </div>
 
                 <div class="form-group mb-6">
                     <label class="form-label font-semibold text-xs text-muted uppercase">Konfirmasi Kata Sandi Baru *</label>
                     <div class="input-with-icon password-input-wrap mt-1">
-                        <input type="password" id="confirm-password" class="form-input" placeholder="Ketik ulang kata sandi baru" required>
+                        <input type="password" id="confirm-password" class="form-input" placeholder="Ketik ulang kata sandi baru" required minlength="5" autocomplete="new-password">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirm-password', this)" title="Lihat kata sandi">
+                            <i class="ph ph-eye"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-4 border-t">
+                <div class="flex items-center justify-between pt-4 border-t flex-wrap gap-3">
                     <span class="text-xs text-muted">Protokol Keamanan Antam v2.4</span>
                     <button type="submit" class="btn-dark" id="btn-save-password">
                         <i class="ph-fill ph-lock-key"></i>
@@ -174,10 +197,10 @@ if (!$user) {
                             <p class="text-xs text-muted">Berapa sering alarm memeriksa tenggat waktu pelatihan Anda</p>
                         </div>
                         <div>
-                            <select id="pref-reminder-freq" class="form-input text-xs" style="width: 140px;">
-                                <option value="Realtime" <?php echo $user['reminder_freq'] === 'Realtime' ? 'selected' : ''; ?>>Realtime</option>
-                                <option value="12 Jam" <?php echo $user['reminder_freq'] === '12 Jam' ? 'selected' : ''; ?>>Setiap 12 Jam</option>
-                                <option value="24 Jam" <?php echo $user['reminder_freq'] === '24 Jam' ? 'selected' : ''; ?>>Setiap 24 Jam</option>
+                            <select id="pref-reminder-freq" class="form-input text-xs" style="width: 150px;">
+                                <option value="Realtime" <?php echo ($user['reminder_freq'] ?? '') === 'Realtime' ? 'selected' : ''; ?>>Realtime</option>
+                                <option value="12 Jam" <?php echo ($user['reminder_freq'] ?? '') === '12 Jam' ? 'selected' : ''; ?>>Setiap 12 Jam</option>
+                                <option value="24 Jam" <?php echo ($user['reminder_freq'] ?? '24 Jam') === '24 Jam' ? 'selected' : ''; ?>>Setiap 24 Jam</option>
                             </select>
                         </div>
                     </div>
@@ -188,7 +211,7 @@ if (!$user) {
                             <p class="text-xs text-muted">Menerima peringatan langsung dari bot resmi L&D ANTAM ke nomor WhatsApp</p>
                         </div>
                         <div>
-                            <label class="switch-toggle">
+                            <label class="switch-toggle" title="Aktifkan/Nonaktifkan notifikasi WhatsApp">
                                 <input type="checkbox" id="pref-wa-notif" <?php echo (!empty($user['wa_notif'])) ? 'checked' : ''; ?>>
                                 <span class="slider"></span>
                             </label>
@@ -201,7 +224,7 @@ if (!$user) {
                             <p class="text-xs text-muted">Kedipkan lencana merah di desktop saat terdapat modul kritis atau overdue</p>
                         </div>
                         <div>
-                            <label class="switch-toggle">
+                            <label class="switch-toggle" title="Aktifkan efek visual peringatan">
                                 <input type="checkbox" checked id="pref-visual-glow">
                                 <span class="slider"></span>
                             </label>
@@ -210,20 +233,60 @@ if (!$user) {
 
                 </div>
 
-                <div class="flex items-center justify-between mt-6 pt-4 border-t">
+                <div class="flex items-center justify-between mt-6 pt-4 border-t flex-wrap gap-3">
                     <span class="text-xs text-muted">Terhubung dengan server Site Pongkor.</span>
-                    <button type="submit" class="btn-dark">
+                    <button type="submit" class="btn-dark" id="btn-save-pref">
                         <i class="ph-fill ph-check-circle"></i>
                         <span>Simpan Preferensi</span>
                     </button>
                 </div>
             </form>
+
+            <?php if (($user['type'] ?? '') === 'Admin'): ?>
+            <div class="mt-6 pt-6 border-t">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="mini-avatar" style="background:#25D366; color:white; width:36px; height:36px; font-size:1.25rem;">
+                        <i class="ph-fill ph-whatsapp-logo"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-sm">Integrasi Bot WhatsApp Gateway (Fonnte API)</h4>
+                        <p class="text-xs text-muted">Opsional: Hubungkan Token API jika ingin bot korporat mengirim peringatan otomatis di background tanpa perlu membuka WhatsApp Web.</p>
+                    </div>
+                </div>
+                
+                <div class="p-4 rounded-md" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                    <div class="form-group mb-3">
+                        <label class="form-label font-semibold text-xs text-muted uppercase">Token API Fonnte (Opsional)</label>
+                        <input type="text" id="cfg-gateway-token" class="form-input text-xs font-mono mt-1" placeholder="cth. aB12cDeFgHijK123..." value="<?php $gw = get_gateway_config(); echo htmlspecialchars($gw['token'] ?? ''); ?>">
+                        <small class="text-xs text-muted mt-1 block">Dapatkan token gratis Anda di <a href="https://fonnte.com" target="_blank" style="color: #0d9488; text-decoration: underline;">fonnte.com</a>. Jika token kosong, pengiriman tetap berjalan 100% via WhatsApp Web langsung.</small>
+                    </div>
+
+                    <div class="flex items-center justify-between flex-wrap gap-3 pt-2">
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                            <input type="checkbox" id="cfg-gateway-autosend" <?php echo !empty($gw['auto_send']) ? 'checked' : ''; ?> style="accent-color: #16a34a;">
+                            <span>Kirim pesan otomatis via Gateway API saat tombol Nudge ditekan</span>
+                        </label>
+                        <button type="button" class="btn-outline text-xs" onclick="handleSaveGatewayConfig()">
+                            <i class="ph-fill ph-floppy-disk"></i> Simpan Pengaturan Gateway
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
 
 <!-- Scripts for Settings Interactivity -->
 <script>
+function safeNotify(message, type = 'info') {
+    if (typeof showToast === 'function') {
+        showToast(message, type);
+    } else {
+        alert(message);
+    }
+}
+
 function switchSettingsTab(btn, tabId) {
     document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -245,32 +308,70 @@ function previewAvatarColor(color) {
     if (av) av.style.background = color;
 }
 
+function togglePasswordVisibility(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        if (icon) {
+            icon.className = 'ph ph-eye-slash';
+        }
+    } else {
+        inp.type = 'password';
+        if (icon) {
+            icon.className = 'ph ph-eye';
+        }
+    }
+}
+
 function checkPasswordStrength(val) {
     const bar = document.getElementById('pass-strength-fill');
+    const txt = document.getElementById('pass-strength-text');
     if (!bar) return;
     if (val.length === 0) {
         bar.style.width = '0%';
+        if (txt) txt.textContent = '';
     } else if (val.length < 5) {
         bar.style.width = '30%';
         bar.style.background = '#ef4444';
+        if (txt) {
+            txt.textContent = 'Terlalu pendek (minimal 5 karakter)';
+            txt.style.color = '#ef4444';
+        }
     } else if (val.length < 8) {
         bar.style.width = '65%';
         bar.style.background = '#f59e0b';
+        if (txt) {
+            txt.textContent = 'Kekuatan sedang';
+            txt.style.color = '#f59e0b';
+        }
     } else {
         bar.style.width = '100%';
         bar.style.background = '#10b981';
+        if (txt) {
+            txt.textContent = 'Kuat & Aman';
+            txt.style.color = '#10b981';
+        }
     }
 }
 
 async function handleSaveProfile(e) {
     e.preventDefault();
-    const name = document.getElementById('profile-name').value;
-    const nrp = document.getElementById('profile-nrp').value;
-    const dept = document.getElementById('profile-dept').value;
-    const email = document.getElementById('profile-email').value;
-    const phone = document.getElementById('profile-phone').value;
+    const btn = document.getElementById('btn-save-profile');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Menyimpan...';
+    }
+
+    const name = document.getElementById('profile-name').value.trim();
+    const nrp = document.getElementById('profile-nrp').value.trim();
+    const dept = document.getElementById('profile-dept').value.trim();
+    const email = document.getElementById('profile-email').value.trim();
+    const phone = document.getElementById('profile-phone').value.trim();
     const avatarColor = document.getElementById('profile-avatar-color').value;
-    const bio = document.getElementById('profile-bio').value;
+    const bio = document.getElementById('profile-bio').value.trim();
 
     const fd = new FormData();
     fd.append('action', 'update_profile');
@@ -286,18 +387,30 @@ async function handleSaveProfile(e) {
         const resp = await fetch('api.php', { method: 'POST', body: fd });
         const res = await resp.json();
         if (res.success) {
-            showToast('✅ Profil berhasil diperbarui!', 'success');
-            document.getElementById('banner-user-name').textContent = name;
-            // Update topbar name if present
+            safeNotify('✅ Profil berhasil diperbarui!', 'success');
+            // Update live preview banner
+            const bName = document.getElementById('banner-user-name');
+            if (bName) bName.textContent = name;
+            const bNrp = document.getElementById('banner-user-nrp');
+            if (bNrp) bNrp.textContent = nrp || '-';
+            const bDept = document.getElementById('banner-user-dept');
+            if (bDept) bDept.textContent = dept || 'PT ANTAM';
+
+            // Update topbar elements
             const topName = document.querySelector('.user-fullname');
-            if (topName) topName.textContent = name;
+            if (topName) topName.textContent = name.toUpperCase();
             const topAv = document.querySelector('.topbar .mini-avatar');
             if (topAv) topAv.style.background = avatarColor;
         } else {
-            showToast(res.message || 'Gagal menyimpan profil.', 'error');
+            safeNotify(res.message || 'Gagal menyimpan profil.', 'error');
         }
     } catch(err) {
-        showToast('Terjadi kesalahan koneksi server.', 'error');
+        safeNotify('Terjadi kesalahan koneksi server.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
     }
 }
 
@@ -307,9 +420,21 @@ async function handleSavePassword(e) {
     const newPass = document.getElementById('new-password').value;
     const confirmPass = document.getElementById('confirm-password').value;
 
-    if (newPass !== confirmPass) {
-        showToast('Konfirmasi kata sandi baru tidak cocok!', 'error');
+    if (newPass.length < 5) {
+        safeNotify('Kata sandi baru minimal 5 karakter!', 'error');
         return;
+    }
+
+    if (newPass !== confirmPass) {
+        safeNotify('Konfirmasi kata sandi baru tidak cocok!', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('btn-save-password');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Memproses...';
     }
 
     const fd = new FormData();
@@ -322,14 +447,19 @@ async function handleSavePassword(e) {
         const resp = await fetch('api.php', { method: 'POST', body: fd });
         const res = await resp.json();
         if (res.success) {
-            showToast('✅ Kata sandi berhasil diubah! Gunakan kata sandi baru saat login berikutnya.', 'success');
+            safeNotify(res.message || '✅ Kata sandi berhasil diubah! Gunakan kata sandi baru saat login berikutnya.', 'success');
             document.getElementById('form-password-settings').reset();
             checkPasswordStrength('');
         } else {
-            showToast(res.message || 'Gagal mengubah kata sandi.', 'error');
+            safeNotify(res.message || 'Gagal mengubah kata sandi.', 'error');
         }
     } catch(err) {
-        showToast('Terjadi kesalahan koneksi server.', 'error');
+        safeNotify('Terjadi kesalahan koneksi server.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
     }
 }
 
@@ -337,6 +467,13 @@ async function handleSavePreferences(e) {
     e.preventDefault();
     const freq = document.getElementById('pref-reminder-freq').value;
     const wa = document.getElementById('pref-wa-notif').checked ? '1' : '0';
+
+    const btn = document.getElementById('btn-save-pref');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Menyimpan...';
+    }
 
     const fd = new FormData();
     fd.append('action', 'update_profile');
@@ -347,12 +484,43 @@ async function handleSavePreferences(e) {
         const resp = await fetch('api.php', { method: 'POST', body: fd });
         const res = await resp.json();
         if (res.success) {
-            showToast('✅ Preferensi alarm & pengingat berhasil disimpan.', 'success');
+            safeNotify('✅ Preferensi alarm & pengingat berhasil disimpan.', 'success');
         } else {
-            showToast('Gagal menyimpan preferensi.', 'error');
+            safeNotify(res.message || 'Gagal menyimpan preferensi.', 'error');
         }
     } catch(err) {
-        showToast('Terjadi kesalahan koneksi.', 'error');
+        safeNotify('Terjadi kesalahan koneksi.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+}
+
+async function handleSaveGatewayConfig() {
+    const token = document.getElementById('cfg-gateway-token') ? document.getElementById('cfg-gateway-token').value.trim() : '';
+    const autoSend = document.getElementById('cfg-gateway-autosend') ? document.getElementById('cfg-gateway-autosend').checked : false;
+
+    const fd = new FormData();
+    fd.append('action', 'save_gateway_config');
+    fd.append('token', token);
+    fd.append('auto_send', autoSend ? '1' : '0');
+
+    try {
+        const resp = await fetch('api.php', { method: 'POST', body: fd });
+        const res = await resp.json();
+        if (res.success) {
+            safeNotify('✅ ' + res.message, 'success');
+            if (window.GATEWAY_CONFIG) {
+                window.GATEWAY_CONFIG.token = token;
+                window.GATEWAY_CONFIG.auto_send = autoSend;
+            }
+        } else {
+            safeNotify(res.message || 'Gagal menyimpan pengaturan gateway.', 'error');
+        }
+    } catch(err) {
+        safeNotify('Terjadi kesalahan koneksi server.', 'error');
     }
 }
 </script>

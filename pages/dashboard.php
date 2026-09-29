@@ -283,7 +283,7 @@ $lnaList = get_lna_catalog();
                                     <i class="ph-fill ph-stamp"></i> Konfirmasi
                                 </a>
                             <?php else: ?>
-                                <button class="btn-outline text-xs" onclick="sendWhatsAppNudge('<?php echo addslashes($act['user_name']); ?>', '<?php echo addslashes($act['title']); ?>')">
+                                <button class="btn-outline text-xs" onclick="sendWhatsAppNudge('<?php echo addslashes($act['user_name']); ?>', '<?php echo addslashes($act['title']); ?>', null, '<?php echo addslashes($act['user_username'] ?? ''); ?>')">
                                     <i class="ph-fill ph-whatsapp-logo text-green"></i> Pantau
                                 </button>
                             <?php endif; ?>

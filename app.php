@@ -51,7 +51,7 @@ if ($_SESSION['user_type'] === 'Admin') {
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
 </head>
 <body class="os-body">
 
@@ -63,17 +63,23 @@ if ($_SESSION['user_type'] === 'Admin') {
         <!-- Topbar (SunFish / ANTAM WorkPlaze Style) -->
         <header class="topbar">
             <div class="topbar-left">
-                <a href="?page=dashboard" class="brand-link" title="Ke Dashboard Utama">
-                    <div class="brand-icon-sunfish">
-                        <i class="ph-bold ph-leaf"></i>
+                <a href="?page=dashboard" class="brand-link" title="Smart Learning — Portal Pembelajaran & K3">
+                    <div class="brand-logo-emblem" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; overflow: hidden; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <img src="assets/img/logo-icon.png" alt="Smart Learning Emblem" class="brand-emblem-img" width="22" height="22" style="width: 22px; height: 22px; max-width: 22px; max-height: 22px; object-fit: contain; display: block;">
                     </div>
-                    <span class="brand-title">Smart Learning</span>
+                    <div class="brand-text-block">
+                        <div class="brand-title-row">
+                            <span class="brand-title">Smart Learning</span>
+                            <span class="brand-k3-badge">PORTAL</span>
+                        </div>
+                        <span class="brand-subtitle">Mining & Safety Academy</span>
+                    </div>
                 </a>
 
                 <!-- Global Search Input (SunFish Style) -->
                 <div class="header-search-bar">
                     <i class="ph ph-magnifying-glass"></i>
-                    <input type="text" id="global-search-input" placeholder="Search for Employees & Functions...">
+                    <input type="text" id="global-search-input" placeholder="Cari Pegawai, Modul K3, atau Pelatihan...">
                     <span class="kbd-shortcut">Ctrl+K</span>
                 </div>
             </div>
@@ -98,17 +104,11 @@ if ($_SESSION['user_type'] === 'Admin') {
                     <span class="topbar-notif-badge" id="topbar-notif-pill"><?php echo $badgeCount > 9 ? '99+' : $badgeCount; ?></span>
                 </a>
 
-                <!-- ANTAM Corporate Brand -->
-                <div class="antam-topbar-brand">
-                    <i class="ph-fill ph-triangle antam-mountain-icon"></i>
-                    <div class="antam-text-logo">antam<span>.</span></div>
-                </div>
-
                 <!-- User Profile Badge & Quick Settings -->
                 <a href="?page=settings" class="user-profile-badge" title="Pengaturan Profil & Password">
                     <div class="user-meta-compact">
                         <span class="user-fullname"><?php echo strtoupper(htmlspecialchars($_SESSION['user_name'])); ?></span>
-                        <span class="user-division">PT ANTAM Tbk</span>
+                        <span class="user-division"><?php echo htmlspecialchars(isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'Mining Operations'); ?></span>
                     </div>
                     <div class="mini-avatar" style="background: <?php echo isset($_SESSION['avatar_color']) ? $_SESSION['avatar_color'] : 'var(--accent)'; ?>">
                         <?php 
@@ -313,9 +313,26 @@ if ($_SESSION['user_type'] === 'Admin') {
         window.CURRENT_USER_TYPE = <?php echo json_encode($_SESSION['user_type'] ?? 'User'); ?>;
         window.CURRENT_USERNAME = <?php echo json_encode($_SESSION['username'] ?? ''); ?>;
         window.INITIAL_PENDING_ACTIVITIES = <?php echo json_encode(($_SESSION['user_type'] === 'Admin') ? get_activities(null, 'menunggu_konfirmasi') : []); ?>;
+        window.USER_CONTACTS = <?php
+            $uList = get_all_users();
+            $contacts = [];
+            foreach ($uList as $u) {
+                $c = [
+                    'username' => $u['username'],
+                    'name'     => $u['name'],
+                    'phone'    => $u['phone'] ?? '',
+                    'dept'     => $u['dept'] ?? '',
+                    'role'     => $u['role'] ?? ''
+                ];
+                $contacts[$u['username']] = $c;
+                $contacts[$u['name']]     = $c;
+            }
+            echo json_encode($contacts);
+        ?>;
+        window.GATEWAY_CONFIG = <?php echo json_encode(get_gateway_config()); ?>;
     </script>
 
     <!-- Scripts -->
-    <script src="assets/js/script.js"></script>
+    <script src="assets/js/script.js?v=<?php echo filemtime(__DIR__ . '/assets/js/script.js'); ?>"></script>
 </body>
 </html>

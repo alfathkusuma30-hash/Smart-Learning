@@ -76,19 +76,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Top Status Bar -->
         <div class="login-top-badge">
             <span class="live-dot"></span>
-            <span>PT ANTAM Tbk · Smart Learning System Site Pongkor</span>
+            <span>Smart Learning System</span>
         </div>
 
         <div class="login-header-block">
+            <!-- Pure Transparent Brand Logo with Ambient Aura -->
+            <div class="login-logo-hero-container">
+                <div class="hero-logo-halo"></div>
+                <img src="assets/img/logo.png" alt="Smart Learning Logo" class="hero-pure-logo">
+            </div>
+            
             <div class="brand-pill">
                 <i class="ph-fill ph-shield-check"></i>
-                PORTAL RESMI PEMBELAJARAN & K3
+                PORTAL RESMI PEMBELAJARAN & K3 ESDM
             </div>
             <h1 class="login-main-title">
-                Smart <span class="text-gradient-gold">Learning Portal</span>
+                Smart <span class="text-gradient-teal">Learning Portal</span>
             </h1>
             <p class="login-main-subtitle">
-                Akses modul pembelajaran mandiri, evaluasi kepatuhan K3 ESDM, dan verifikasi sertifikasi kerja site tambang bawah tanah.
+                Sistem Terpadu Pembelajaran Mandiri, Evaluasi Kepatuhan K3 ESDM & Sertifikasi Kompetensi Site Pongkor
             </p>
         </div>
 
