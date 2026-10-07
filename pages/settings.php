@@ -40,13 +40,27 @@ $avatarColor = !empty($user['avatar_color']) ? $user['avatar_color'] : '#0f766e'
     <!-- User Mini Profile Banner -->
     <div class="settings-profile-banner glass-panel mb-6">
         <div class="flex items-center gap-4 flex-wrap">
-            <div class="settings-avatar-preview" id="settings-avatar-circle" style="background: <?php echo htmlspecialchars($avatarColor); ?>;">
-                <?php echo htmlspecialchars($initials); ?>
+            <div class="settings-avatar-wrapper" onclick="document.getElementById('settings-avatar-input').click()" title="Klik untuk langsung mengganti foto profil">
+                <div class="settings-avatar-preview settings-avatar-interactive" id="settings-avatar-circle" style="background: <?php echo htmlspecialchars($avatarColor); ?>; overflow: hidden; padding: 0;">
+                    <?php if (!empty($user['avatar_image']) && file_exists(__DIR__ . '/../uploads/avatars/' . $user['avatar_image'])): ?>
+                        <img src="uploads/avatars/<?php echo htmlspecialchars($user['avatar_image']); ?>" alt="Foto Profil" id="banner-avatar-img" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">
+                    <?php else: ?>
+                        <span id="banner-avatar-initials"><?php echo htmlspecialchars($initials); ?></span>
+                    <?php endif; ?>
+                    <div class="avatar-hover-hint">
+                        <i class="ph-bold ph-camera"></i>
+                    </div>
+                </div>
+                <div class="avatar-camera-badge" title="Klik untuk mengganti foto profil">
+                    <i class="ph-bold ph-camera"></i>
+                </div>
             </div>
+            <!-- Input Berkas Foto Tersembunyi (Langsung terbuka saat avatar ditekan) -->
+            <input type="file" id="settings-avatar-input" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" onchange="handleDirectAvatarUpload(this)">
             <div>
                 <h2 class="text-xl font-bold" id="banner-user-name"><?php echo htmlspecialchars($user['name'] ?? $username); ?></h2>
                 <div class="flex items-center gap-3 text-xs text-muted mt-1 flex-wrap font-mono">
-                    <span><i class="ph-fill ph-identification-card"></i> NRP: <span id="banner-user-nrp"><?php echo htmlspecialchars($user['nrp'] ?? '-'); ?></span></span>
+                    <span><i class="ph-fill ph-identification-card"></i> NPP: <span id="banner-user-nrp"><?php echo htmlspecialchars($user['nrp'] ?? '-'); ?></span></span>
                     <span>•</span>
                     <span><i class="ph-fill ph-hard-hat"></i> <span id="banner-user-role"><?php echo htmlspecialchars($user['role'] ?? 'Operasional Tambang'); ?></span></span>
                     <span>•</span>
@@ -81,7 +95,7 @@ $avatarColor = !empty($user['avatar_color']) ? $user['avatar_color'] : '#0f766e'
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label font-semibold text-xs text-muted uppercase">NRP / ID Pegawai</label>
+                        <label class="form-label font-semibold text-xs text-muted uppercase">NPP Lengkap</label>
                         <input type="text" id="profile-nrp" class="form-input mt-1" value="<?php echo htmlspecialchars($user['nrp'] ?? ''); ?>" placeholder="cth. ANTAM-08912">
                     </div>
 
@@ -234,7 +248,7 @@ $avatarColor = !empty($user['avatar_color']) ? $user['avatar_color'] : '#0f766e'
                 </div>
 
                 <div class="flex items-center justify-between mt-6 pt-4 border-t flex-wrap gap-3">
-                    <span class="text-xs text-muted">Terhubung dengan server Site Pongkor.</span>
+                    <span class="text-xs text-muted">Terhubung dengan server Site Pomalaa.</span>
                     <button type="submit" class="btn-dark" id="btn-save-pref">
                         <i class="ph-fill ph-check-circle"></i>
                         <span>Simpan Preferensi</span>
@@ -383,6 +397,12 @@ async function handleSaveProfile(e) {
     fd.append('avatar_color', avatarColor);
     fd.append('bio', bio);
 
+    // Append avatar file if selected
+    const avatarInput = document.getElementById('settings-avatar-input');
+    if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+        fd.append('avatar_file', avatarInput.files[0]);
+    }
+
     try {
         const resp = await fetch('api.php', { method: 'POST', body: fd });
         const res = await resp.json();
@@ -401,6 +421,22 @@ async function handleSaveProfile(e) {
             if (topName) topName.textContent = name.toUpperCase();
             const topAv = document.querySelector('.topbar .mini-avatar');
             if (topAv) topAv.style.background = avatarColor;
+
+            // Update avatar images if updated
+            if (res.user && res.user.avatar_image) {
+                const newImgUrl = 'uploads/avatars/' + res.user.avatar_image + '?v=' + Date.now();
+                const bImg = document.getElementById('banner-avatar-img');
+                const bInit = document.getElementById('banner-avatar-initials');
+                if (bImg) {
+                    bImg.src = newImgUrl;
+                    bImg.style.display = 'block';
+                } else if (bInit) {
+                    bInit.outerHTML = '<img src="' + newImgUrl + '" alt="Foto Profil" id="banner-avatar-img" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">';
+                }
+                if (topAv) {
+                    topAv.innerHTML = '<img src="' + newImgUrl + '" alt="Foto Profil" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">';
+                }
+            }
         } else {
             safeNotify(res.message || 'Gagal menyimpan profil.', 'error');
         }
@@ -411,6 +447,84 @@ async function handleSaveProfile(e) {
             btn.disabled = false;
             btn.innerHTML = origHtml;
         }
+    }
+}
+
+async function handleDirectAvatarUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+
+    // Validasi format file gambar
+    const validExts = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+    if (!validExts.includes(file.type.toLowerCase()) && !file.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+        safeNotify('Format file harus berupa gambar (JPG, PNG, atau WEBP).', 'error');
+        input.value = '';
+        return;
+    }
+
+    // Validasi ukuran berkas (maksimal 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        safeNotify('Ukuran gambar maksimal 5MB.', 'error');
+        input.value = '';
+        return;
+    }
+
+    // Pratinjau lokal instan
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const bImg = document.getElementById('banner-avatar-img');
+        const bInit = document.getElementById('banner-avatar-initials');
+        if (bImg) {
+            bImg.src = e.target.result;
+            bImg.style.display = 'block';
+        } else if (bInit) {
+            bInit.outerHTML = '<img src="' + e.target.result + '" alt="Foto Profil" id="banner-avatar-img" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">';
+        }
+    };
+    reader.readAsDataURL(file);
+
+    // Animasi feedback upload pada avatar circle
+    const avCircle = document.getElementById('settings-avatar-circle');
+    if (avCircle) {
+        avCircle.style.opacity = '0.5';
+    }
+
+    const fd = new FormData();
+    fd.append('action', 'update_profile');
+    fd.append('avatar_file', file);
+
+    const nameInput = document.getElementById('profile-name');
+    if (nameInput && nameInput.value.trim()) {
+        fd.append('name', nameInput.value.trim());
+    }
+
+    try {
+        const resp = await fetch('api.php', { method: 'POST', body: fd });
+        const res = await resp.json();
+        if (res.success) {
+            safeNotify('✅ Foto profil berhasil diperbarui!', 'success');
+            if (res.user && res.user.avatar_image) {
+                const newImgUrl = 'uploads/avatars/' + res.user.avatar_image + '?v=' + Date.now();
+                const bImg = document.getElementById('banner-avatar-img');
+                if (bImg) {
+                    bImg.src = newImgUrl;
+                    bImg.style.display = 'block';
+                }
+                const topAv = document.querySelector('.topbar .mini-avatar');
+                if (topAv) {
+                    topAv.innerHTML = '<img src="' + newImgUrl + '" alt="Foto Profil" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">';
+                }
+            }
+        } else {
+            safeNotify(res.message || 'Gagal mengunggah foto profil.', 'error');
+        }
+    } catch(err) {
+        safeNotify('Terjadi kesalahan koneksi saat mengunggah foto.', 'error');
+    } finally {
+        if (avCircle) {
+            avCircle.style.opacity = '1';
+        }
+        input.value = '';
     }
 }
 

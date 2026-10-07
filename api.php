@@ -3,8 +3,12 @@
  * RESTful API Controller
  * Smart Learning Windows — PT ANTAM Tbk
  */
-session_start();
-header('Content-Type: application/json; charset=utf-8');
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+}
 
 require_once __DIR__ . '/includes/data.php';
 
@@ -41,21 +45,6 @@ switch ($action) {
         $deadline = isset($_POST['deadline']) ? trim($_POST['deadline']) : date('d M Y', strtotime('+14 days'));
         $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-        // Handle template file upload if provided
-        $certTemplateName = null;
-        if (isset($_FILES['template_file']) && $_FILES['template_file']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/uploads/templates/';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0777, true);
-            }
-            $origFileName     = basename($_FILES['template_file']['name']);
-            $certTemplateName = 'tpl_' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $origFileName);
-            $targetPath       = $uploadDir . $certTemplateName;
-            if (!@move_uploaded_file($_FILES['template_file']['tmp_name'], $targetPath)) {
-                $certTemplateName = null;
-            }
-        }
-
         $res = add_new_activity([
             'user_username' => $currentUser,
             'user_name' => $_SESSION['user_name'],
@@ -66,7 +55,7 @@ switch ($action) {
             'level' => $level,
             'deadline' => $deadline,
             'notes' => $notes,
-            'cert_template' => $certTemplateName
+            'cert_template' => null
         ]);
 
         echo json_encode($res);
@@ -103,6 +92,19 @@ switch ($action) {
         $title = isset($_POST['title']) ? trim($_POST['title']) : 'Pelatihan Baru';
         $deadline = isset($_POST['deadline']) ? trim($_POST['deadline']) : '14 Hari';
 
+        if ($targetUsername === 'all' || $targetUsername === 'semua') {
+            $allUsers = get_all_users();
+            $assignedCount = 0;
+            foreach ($allUsers as $u) {
+                if (($u['type'] ?? '') !== 'Admin') {
+                    assign_training_to_user($u['username'], $title, $deadline);
+                    $assignedCount++;
+                }
+            }
+            echo json_encode(['success' => true, 'message' => "Pelatihan \"{$title}\" berhasil ditugaskan ke {$assignedCount} pegawai."]);
+            exit();
+        }
+
         $res = assign_training_to_user($targetUsername, $title, $deadline);
         echo json_encode($res);
         break;
@@ -130,7 +132,25 @@ switch ($action) {
             $profile['wa_notif'] = ($_POST['wa_notif'] === '1' || $_POST['wa_notif'] === 1 || $_POST['wa_notif'] === 'true' || $_POST['wa_notif'] === true);
         }
 
-        if (empty($profile)) {
+        // Handle Avatar Image File Upload
+        if (isset($_FILES['avatar_file']) && $_FILES['avatar_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/uploads/avatars/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $fileInfo = pathinfo($_FILES['avatar_file']['name']);
+            $ext = strtolower($fileInfo['extension'] ?? '');
+            $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            if (in_array($ext, $allowedExts, true)) {
+                $safeFileName = 'avatar_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $currentUser) . '_' . time() . '.' . $ext;
+                $targetPath = $uploadDir . $safeFileName;
+                if (@move_uploaded_file($_FILES['avatar_file']['tmp_name'], $targetPath)) {
+                    $profile['avatar_image'] = $safeFileName;
+                }
+            }
+        }
+
+        if (empty($profile) && !isset($_FILES['avatar_file'])) {
             echo json_encode(['success' => false, 'message' => 'Tidak ada data untuk diperbarui.']);
             exit();
         }
@@ -151,6 +171,9 @@ switch ($action) {
             }
             if (!empty($res['user']['avatar_color'])) {
                 $_SESSION['avatar_color'] = $res['user']['avatar_color'];
+            }
+            if (isset($res['user']['avatar_image'])) {
+                $_SESSION['avatar_image'] = $res['user']['avatar_image'];
             }
             if (!empty($res['user']['role'])) {
                 $_SESSION['user_role'] = $res['user']['role'];
@@ -509,6 +532,38 @@ switch ($action) {
     case 'get_gateway_config':
         $cfg = get_gateway_config();
         echo json_encode(['success' => true, 'config' => $cfg]);
+        break;
+
+    // 16. Admin Adds New Course to Catalog Master
+    case 'add_catalog_course':
+        if ($userType !== 'Admin') {
+            echo json_encode(['success' => false, 'message' => 'Hanya Admin yang dapat menambahkan modul master.']);
+            exit();
+        }
+
+        $code     = isset($_POST['code'])     ? trim($_POST['code'])     : 'TRC-NEW';
+        $title    = isset($_POST['title'])    ? trim($_POST['title'])    : '';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : 'GENERAL';
+        $type     = isset($_POST['type'])     ? trim($_POST['type'])     : 'Inhouse';
+        $duration = isset($_POST['duration']) ? trim($_POST['duration']) : '2 Hari (16 Jam)';
+        $level    = isset($_POST['level'])    ? trim($_POST['level'])    : 'Basic';
+        $desc     = isset($_POST['desc'])     ? trim($_POST['desc'])     : '';
+
+        if (empty($title)) {
+            echo json_encode(['success' => false, 'message' => 'Nama modul pelatihan wajib diisi.']);
+            exit();
+        }
+
+        $res = add_catalog_course([
+            'code'     => $code,
+            'title'    => $title,
+            'category' => $category,
+            'type'     => $type,
+            'duration' => $duration,
+            'level'    => $level,
+            'desc'     => $desc
+        ]);
+        echo json_encode($res);
         break;
 
     default:

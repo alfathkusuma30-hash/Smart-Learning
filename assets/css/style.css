@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Kalam:wght@400;700&display=swap');
+
 :root {
     --bg-dark: #f4f6f9;
     --bg-darker: #edf2f7;
@@ -1756,98 +1758,222 @@ a {
 }
 
 .home-hero-banner {
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #ffffff;
-    color: #0f172a;
-    padding: 2rem 2.25rem;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-    border: 1px solid #e2e8f0;
-    border-left: 4px solid #0f766e;
+    background: linear-gradient(135deg, #022c22 0%, #064e3b 35%, #065f46 70%, #047857 100%);
+    color: #ffffff;
+    padding: 2.25rem 2.75rem;
+    border-radius: 16px;
+    box-shadow: 0 16px 36px -8px rgba(6, 78, 59, 0.45), 0 4px 12px rgba(2, 44, 34, 0.2);
+    border: 1px solid rgba(52, 211, 153, 0.28);
+    border-left: 6px solid #10b981;
 }
+
+/* Watermark Silhouette Layer (Learning & Mining) */
+.hero-banner-watermark {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.hero-banner-watermark-glow {
+    position: absolute;
+    top: -40%;
+    right: 18%;
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.3) 0%, rgba(16, 185, 129, 0.12) 40%, transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.hero-banner-watermark-img {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 58%;
+    height: 100%;
+    background-image: url('../img/banner_mining_learning.jpg');
+    background-size: cover;
+    background-position: center right;
+    opacity: 0.28;
+    mix-blend-mode: screen;
+    filter: saturate(1.2) brightness(1.08) contrast(1.1);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.25) 15%, rgba(0, 0, 0, 0.8) 55%, rgba(0, 0, 0, 1) 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.25) 15%, rgba(0, 0, 0, 0.8) 55%, rgba(0, 0, 0, 1) 100%);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+
+.home-hero-banner:hover .hero-banner-watermark-img {
+    transform: scale(1.03) translateX(-4px);
+    opacity: 0.36;
+}
+
+.hero-left {
+    position: relative;
+    z-index: 2;
+}
+
 .hero-tag {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.45rem;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    color: #0f766e;
-    margin-bottom: 0.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 1.2px;
+    color: #a7f3d0;
+    background: rgba(6, 95, 70, 0.55);
+    border: 1px solid rgba(110, 231, 183, 0.32);
+    padding: 0.3rem 0.9rem;
+    border-radius: 9999px;
+    margin-bottom: 0.85rem;
     font-weight: 600;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
+
+.hero-tag i {
+    color: #34d399;
+}
+
 .hero-title {
-    font-size: 1.85rem;
-    letter-spacing: -0.02em;
-    margin-bottom: 0.5rem;
-    color: #0f172a;
+    font-size: 2.15rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    margin-bottom: 1rem;
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(2, 44, 34, 0.5);
+    line-height: 1.2;
 }
-.hero-subtitle {
-    font-size: 0.875rem;
-    color: #64748b;
-    max-width: 1100px;
-    line-height: 1.5;
-    margin-bottom: 1.25rem;
+
+.hero-title .text-accent {
+    background: linear-gradient(135deg, #a7f3d0 0%, #34d399 50%, #6ee7b7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    font-weight: 800;
 }
 
 .hero-badges-row {
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
+    align-items: center;
 }
+
 .hero-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.75rem;
-    border-radius: var(--radius-full);
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    font-size: 0.75rem;
-    color: #475569;
+    gap: 0.45rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.76rem;
+    color: #e6fffa;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
 }
+
+.hero-badge i {
+    color: #6ee7b7;
+    font-size: 0.88rem;
+}
+
+.hero-badge:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+}
+
 .hero-badge.highlight {
-    background: #fef3c7;
-    border-color: #fde68a;
-    color: #b45309;
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(251, 191, 36, 0.45);
+    color: #fef08a;
+}
+
+.hero-badge.highlight i {
+    color: #fde047;
 }
 
 .hero-right-widget {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
-    min-width: 160px;
+    gap: 0.85rem;
+    min-width: 165px;
 }
+
 .widget-circle-progress {
-    width: 95px;
-    height: 95px;
+    width: 98px;
+    height: 98px;
     border-radius: 50%;
-    background: radial-gradient(circle, #ffffff 60%, transparent 65%), conic-gradient(#0f766e 0% 45%, #e2e8f0 45% 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 15px rgba(52, 211, 153, 0.25);
+    border: 2px solid rgba(110, 231, 183, 0.35);
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease;
 }
+
+.widget-circle-progress:hover {
+    transform: scale(1.05);
+}
+
 .progress-info {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
+
 .progress-val {
-    font-size: 1.35rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 800;
     font-family: var(--font-mono);
-    color: #0f172a;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
+
 .progress-lbl {
-    font-size: 0.65rem;
-    color: #64748b;
+    font-size: 0.64rem;
+    color: #a7f3d0;
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+}
+
+.btn-hero-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.6rem 1.4rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid rgba(167, 243, 208, 0.4);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    transition: all 0.25s ease;
+}
+
+.btn-hero-action:hover {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55);
+    transform: translateY(-2px);
+    color: #ffffff;
 }
 
 .section-divider-title {
@@ -3215,8 +3341,15 @@ a {
     .home-hero-banner {
         flex-direction: column;
         text-align: center;
-        padding: 1.5rem;
+        padding: 1.75rem 1.25rem;
         gap: 1.5rem;
+    }
+    
+    .hero-banner-watermark-img {
+        width: 100%;
+        opacity: 0.16;
+        mask-image: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
+        -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
     }
     
     .hero-badges-row {
@@ -3480,6 +3613,435 @@ a {
 }
 .admin-demo-chip {
     width: 100%;
+}
+
+/* =========================================================
+   LOGIN 2FA, OTP & REGISTRATION STYLES (INDEX.PHP)
+   ========================================================= */
+
+/* Mode Selector (Masuk Akun vs Buat Akun Baru) */
+.auth-mode-nav {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: var(--radius-full);
+    padding: 0.3rem;
+    margin-bottom: 1.75rem;
+    gap: 0.25rem;
+    border: 1px solid #e2e8f0;
+}
+.auth-mode-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius-full);
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.auth-mode-btn:hover {
+    color: #0f766e;
+}
+.auth-mode-btn.active {
+    background: #ffffff;
+    color: #0f766e;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Success & Info Alerts */
+.login-alert.alert-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+}
+.login-alert.alert-info {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    color: #0f766e;
+}
+
+/* 2FA Card & Elements */
+.auth-2fa-badge-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+.auth-2fa-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.auth-2fa-user-info {
+    flex: 1;
+    min-width: 0;
+}
+.auth-2fa-user-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.15rem;
+}
+.auth-2fa-user-meta {
+    font-size: 0.775rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.auth-2fa-role-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #f0fdfa;
+    color: #0f766e;
+    border: 1px solid #ccfbf1;
+}
+
+.auth-2fa-email-notice {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+.auth-2fa-email-notice p {
+    font-size: 0.875rem;
+    color: #475569;
+    margin-bottom: 0.35rem;
+}
+.auth-masked-email-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 99px;
+    background: #e6fffa;
+    color: #0f766e;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 1px solid #99f6e4;
+}
+
+/* 6-Digit OTP Box Grid */
+.otp-boxes-grid {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+}
+.otp-digit-box {
+    width: 52px;
+    height: 60px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+.otp-digit-box:focus {
+    background: #ffffff;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.18);
+    transform: translateY(-2px);
+}
+.otp-digit-box.filled {
+    border-color: #0f766e;
+    background: #f0fdfa;
+}
+
+/* Simulation helper banner */
+.otp-simulation-card {
+    background: #fffbeb;
+    border: 1px dashed #f59e0b;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    color: #92400e;
+}
+.otp-sim-fill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    background: #f59e0b;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.otp-sim-fill-btn:hover {
+    background: #d97706;
+}
+
+/* Countdown & Actions */
+.otp-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.25rem;
+    font-size: 0.825rem;
+    color: #64748b;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+.btn-resend-otp {
+    background: transparent;
+    border: none;
+    color: #0f766e;
+    font-weight: 600;
+    font-size: 0.825rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+.btn-resend-otp:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+.btn-resend-otp:not(:disabled):hover {
+    color: #115e59;
+    text-decoration: underline;
+}
+
+.btn-cancel-auth {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.825rem;
+    transition: color 0.15s ease;
+}
+.btn-cancel-auth:hover {
+    color: #ef4444;
+}
+
+/* Registration Form Layout */
+.register-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.grid-col-full {
+    grid-column: 1 / -1;
+}
+
+.form-select-auth {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    font-family: var(--font-body);
+    font-size: 0.925rem;
+    outline: none;
+    transition: var(--transition);
+}
+.form-select-auth:focus {
+    background: #ffffff;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.role-radio-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+}
+.role-radio-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.role-radio-card:hover {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+}
+.role-radio-card.active,
+.role-radio-card:has(input:checked) {
+    border-color: #0f766e;
+    background: #f0fdfa;
+    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.12);
+}
+.role-radio-card input[type="radio"] {
+    accent-color: #0f766e;
+    width: 16px;
+    height: 16px;
+}
+.role-radio-label {
+    display: flex;
+    flex-direction: column;
+}
+.role-radio-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+.role-radio-desc {
+    font-size: 0.7rem;
+    color: #64748b;
+}
+
+/* Avatar Uploader in Registration & Settings */
+.avatar-uploader-section {
+    padding: 1rem 1.15rem;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    transition: all 0.2s ease;
+}
+.avatar-uploader-section:hover {
+    border-color: #0f766e;
+    background: #f0fdfa;
+}
+.avatar-uploader-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+}
+.avatar-preview-circle {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: 2px solid #cbd5e1;
+    transition: all 0.2s ease;
+}
+.avatar-preview-circle:hover {
+    border-color: #0f766e;
+}
+.avatar-preview-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.avatar-upload-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.65);
+    color: #ffffff;
+    font-size: 0.75rem;
+    padding: 2px 0;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.avatar-preview-circle:hover .avatar-upload-overlay {
+    opacity: 1;
+}
+.avatar-uploader-text {
+    flex: 1;
+}
+.btn-select-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    font-size: 0.775rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.btn-select-photo:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+.btn-clear-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.65rem;
+    border-radius: 6px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 0.35rem;
+}
+
+@media (max-width: 640px) {
+    .register-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .role-radio-group {
+        grid-template-columns: 1fr;
+    }
+    .otp-boxes-grid {
+        gap: 0.35rem;
+    }
+    .otp-digit-box {
+        width: 42px;
+        height: 52px;
+        font-size: 1.45rem;
+    }
 }
 
 /* =========================================================
@@ -4257,6 +4819,69 @@ input:checked + .slider:before {
     letter-spacing: 0.05em;
 }
 
+.settings-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.settings-avatar-interactive {
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.settings-avatar-interactive:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(15, 118, 110, 0.35);
+    border-color: #0f766e;
+}
+
+.settings-avatar-interactive .avatar-hover-hint {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    pointer-events: none;
+}
+
+.settings-avatar-interactive:hover .avatar-hover-hint {
+    opacity: 1;
+}
+
+.avatar-camera-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 24px;
+    height: 24px;
+    background: #0f766e;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    z-index: 2;
+}
+
+.settings-avatar-wrapper:hover .avatar-camera-badge {
+    transform: scale(1.15);
+    background: #0d9488;
+}
+
 .badge-role-tag {
     font-size: 0.68rem;
     font-weight: 700;
@@ -4819,5 +5444,1908 @@ input:checked + .slider:before {
         flex-wrap: wrap;
     }
 }
+
+/* ===================================================
+   PT ANTAM Tbk DESK TENT CALENDAR (REALISTIC CORPORATE STAND)
+   Sesuai Foto Referensi Kalender Meja Duduk Antam 2027
+   =================================================== */
+
+/* Outer Environment Container: Executive Modern Desk */
+.desk-calendar-scene {
+    background: radial-gradient(circle at 50% 15%, #ffffff 0%, #f8fafc 40%, #e2e8f0 85%, #cbd5e1 100%);
+    border: 1px solid #cbd5e1;
+    border-radius: 18px;
+    padding: 2.25rem 2.5rem 3rem 2.5rem;
+    margin: 1.5rem auto 3rem auto;
+    max-width: 1320px;
+    position: relative;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.16), 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Spiral Wire Ring Binder at Top of Desk Calendar */
+.desk-spiral-binding {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 45px;
+    margin-bottom: -15px;
+    position: relative;
+    z-index: 20;
+    pointer-events: none;
+}
+.desk-spiral-loop {
+    width: 14px;
+    height: 32px;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 28%, #64748b 70%, #1e293b 100%);
+    border-radius: 7px;
+    box-shadow: 0 5px 9px rgba(0, 0, 0, 0.35), inset 0 1px 2px #ffffff;
+    position: relative;
+}
+.desk-spiral-loop::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 2px;
+    right: 2px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 4px;
+}
+.desk-paper-hole {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 12px;
+    background: #334155;
+    border-radius: 4px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Desk Calendar Main Paper Card (Thick White Cardstock) */
+.desk-calendar-card {
+    background: #ffffff;
+    border-radius: 4px 4px 10px 10px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 20px 45px -8px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 2.25rem 2.5rem 1.75rem 2.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+/* Top Banner Header Row (PT ANTAM Tbk + Red Slash + Excavator Graphic + Month Year) */
+.desk-cal-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #e2e8f0;
+    gap: 1.5rem;
+}
+.desk-cal-brand-area {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+.desk-cal-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+.desk-antam-emblem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
+}
+.desk-cal-company-text {
+    display: flex;
+    flex-direction: column;
+}
+.desk-cal-company-name {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    font-family: var(--font-heading, sans-serif);
+}
+.desk-cal-site-name {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: var(--font-mono, monospace);
+    margin-top: 2px;
+}
+
+/* Slanted Red Line Accent matching reference photo (-20deg skew) */
+.desk-cal-red-slash {
+    width: 4.5px;
+    height: 48px;
+    background: #dc2626;
+    transform: skewX(-20deg);
+    border-radius: 2px;
+    box-shadow: 1px 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+/* Heavy Mining Excavator Silhouette Graphic */
+.desk-cal-mining-art {
+    display: flex;
+    align-items: flex-end;
+}
+
+/* Month and Year Title matching reference photo ("JANUARY 2027" / "AGUSTUS 2026") */
+.desk-cal-title-area {
+    text-align: right;
+}
+.desk-cal-month-year-title {
+    font-size: 2.45rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1;
+    font-family: var(--font-heading, sans-serif);
+}
+.desk-cal-tagline {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #0f766e;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    font-family: var(--font-mono, monospace);
+}
+
+/* Body Layout: Left Main Date Grid (7 Cols) + Right Ruled NOTES Column */
+.desk-cal-body-layout {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 1.25rem;
+}
+
+/* Main Grid Section */
+.desk-cal-grid-section {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Weekday Header Strip (Sun | Mon | Tue | Wed | Thu | Fri | Sat) */
+.desk-cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px;
+    background: #cbd5e1;
+    border: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+    border-radius: 6px 6px 0 0;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+}
+.desk-cal-weekday-col {
+    background: #475569;
+    padding: 0.65rem 0.25rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    font-family: var(--font-mono, monospace);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    box-sizing: border-box;
+}
+/* Red Sunday Box Header matching reference photo */
+.desk-cal-weekday-col.is-sun {
+    background: #b91c1c !important;
+    color: #ffffff !important;
+    font-weight: 800;
+}
+
+/* Days Grid Container */
+.desk-cal-days-table {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px;
+    background: #cbd5e1;
+    border-left: 1px solid #cbd5e1;
+    border-right: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+}
+.desk-cal-day-box {
+    background: #ffffff;
+    min-height: 112px;
+    padding: 0.5rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.desk-cal-day-box:hover {
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 1px #94a3b8;
+}
+.desk-cal-day-box.is-other-month {
+    background: #fbfcfd;
+}
+.desk-cal-day-box.is-other-month .desk-cal-day-num {
+    color: #cbd5e1 !important;
+}
+.desk-cal-day-box.is-today {
+    background: #f0fdfa !important;
+}
+.desk-cal-day-box.is-selected {
+    box-shadow: inset 0 0 0 2px #0f766e;
+    background: #fafcfc !important;
+}
+
+/* Day Numbers */
+.desk-cal-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+.desk-cal-day-num {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+    font-family: var(--font-mono, monospace);
+}
+/* Sunday Day Numbers in Red matching reference photo */
+.desk-cal-day-box.is-sun .desk-cal-day-num {
+    color: #dc2626 !important;
+    font-weight: 800;
+}
+/* Today Circle Indicator */
+.desk-cal-day-box.is-today .desk-cal-day-num {
+    background: #0f766e;
+    color: #ffffff !important;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+}
+
+/* Event Note Annotations inside Date Cells */
+.desk-cal-notes-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+.desk-event-annotation {
+    font-size: 0.72rem;
+    line-height: 1.25;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+.desk-event-annotation:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+/* Telah Dilaksanakan (Green Tag / Done) */
+.annot-completed {
+    background: #ecfdf5;
+    color: #065f46;
+    border-left: 3px solid #10b981;
+}
+.annot-completed i {
+    color: #10b981;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+/* Akan Terjadi (Blue Tag / Upcoming) */
+.annot-upcoming {
+    background: #f0f9ff;
+    color: #0369a1;
+    border-left: 3px solid #0284c7;
+}
+.annot-upcoming i {
+    color: #0284c7;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+/* Holiday / Special (Red Tag) */
+.annot-holiday {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 3px solid #dc2626;
+}
+.annot-holiday i {
+    color: #dc2626;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+.desk-event-more {
+    font-size: 0.68rem;
+    color: #64748b;
+    font-weight: 600;
+    padding-left: 4px;
+}
+
+/* Right Column: Ruled Notepad ("NOTES / Plan...") matching reference photo */
+.desk-cal-sidebar-notes {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    overflow: hidden;
+}
+.desk-sidebar-notes-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #cbd5e1;
+    padding: 0.55rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+}
+.desk-notes-tag {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #334155;
+    letter-spacing: 0.06em;
+    font-family: var(--font-mono, monospace);
+}
+.desk-notes-subtag {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #64748b;
+    font-family: Georgia, serif;
+}
+.desk-sidebar-notes-body {
+    flex: 1;
+    background: #ffffff;
+    background-image: repeating-linear-gradient(transparent, transparent 27px, #e2e8f0 28px);
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 400px;
+}
+.desk-note-item {
+    font-size: 0.75rem;
+    color: #1e293b;
+    line-height: 1.45;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 4px 6px;
+    border-radius: 4px;
+    border-left: 3px solid #0f766e;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.desk-note-item i {
+    color: #0f766e;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+.desk-notes-action-row {
+    padding: 0.45rem 0.75rem;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+}
+.desk-btn-mini-add {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+}
+.desk-btn-mini-add:hover {
+    background: #0f766e;
+    color: #ffffff;
+    border-color: #0f766e;
+}
+.desk-btn-mini-reset {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+}
+.desk-btn-mini-reset:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+/* Bottom Ruled Section ("NOTES / Plan... / Follow-up...") matching reference photo */
+.desk-cal-bottom-notes {
+    margin-top: 1.25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: #ffffff;
+    overflow: hidden;
+}
+.desk-bottom-notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid #cbd5e1;
+}
+.desk-bottom-notes-col:first-child {
+    border-right: 1px solid #cbd5e1;
+}
+.desk-bottom-notes-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #cbd5e1;
+    padding: 0.5rem 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.desk-bottom-notes-body {
+    background: #ffffff;
+    background-image: repeating-linear-gradient(transparent, transparent 27px, #e2e8f0 28px);
+    padding: 0.75rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100px;
+}
+.desk-bottom-line {
+    font-size: 0.8rem;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.92);
+}
+.desk-bottom-line i {
+    color: #0f766e;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.desk-bottom-action-bar {
+    padding: 0.45rem 1.15rem;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Easel Stand Base (Realistic triangular desk calendar base underneath) */
+.desk-calendar-stand-base {
+    height: 24px;
+    background: linear-gradient(180deg, #94a3b8 0%, #64748b 70%, #475569 100%);
+    margin: 0 20px;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 18px 30px rgba(15, 23, 42, 0.22);
+    position: relative;
+    border: 1px solid #475569;
+    border-top: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 12px;
+}
+.desk-stand-fold-left, .desk-stand-fold-right {
+    width: 25px;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(0,0,0,0.2) 0%, transparent 100%);
+}
+.desk-stand-fold-right {
+    background: linear-gradient(-90deg, rgba(0,0,0,0.2) 0%, transparent 100%);
+}
+
+/* Realistic Ballpoint Pen lying on the desk in front of calendar */
+.desk-pen-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 60px;
+    margin-top: -12px;
+    position: relative;
+    z-index: 15;
+}
+.desk-pen-assembly {
+    position: relative;
+    transform: rotate(-3.5deg);
+}
+.desk-pen-mockup {
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+.desk-pen-clip {
+    position: absolute;
+    top: -5px;
+    left: 8px;
+    width: 22px;
+    height: 4px;
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 50%, #64748b 100%);
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    z-index: 3;
+}
+.desk-pen-cap {
+    width: 32px;
+    height: 11px;
+    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 40%, #94a3b8 100%);
+    border-radius: 5px 0 0 5px;
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #64748b;
+}
+.desk-pen-ring {
+    width: 4px;
+    height: 12px;
+    background: #475569;
+}
+.desk-pen-barrel {
+    width: 140px;
+    height: 11px;
+    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 35%, #94a3b8 80%, #64748b 100%);
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.desk-pen-brand {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.08em;
+    font-family: var(--font-mono, monospace);
+    opacity: 0.8;
+}
+.desk-pen-grip {
+    width: 20px;
+    height: 11px;
+    background: repeating-linear-gradient(90deg, #94a3b8, #94a3b8 2px, #cbd5e1 2px, #cbd5e1 4px);
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #475569;
+}
+.desk-pen-cone {
+    width: 18px;
+    height: 11px;
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 50%, #64748b 100%);
+    clip-path: polygon(0 0, 100% 35%, 100% 65%, 0 100%);
+}
+.desk-pen-point {
+    width: 4px;
+    height: 3px;
+    background: #0f172a;
+    border-radius: 0 2px 2px 0;
+}
+.desk-pen-shadow {
+    position: absolute;
+    top: 7px;
+    left: 4px;
+    right: -4px;
+    height: 9px;
+    background: rgba(15, 23, 42, 0.28);
+    border-radius: 50%;
+    filter: blur(4px);
+    z-index: 1;
+}
+
+/* Quick Jump to Reference 2027 Button */
+.cal-quick-ref-btn {
+    background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+    color: #ffffff;
+    border: none;
+    padding: 0.45rem 0.95rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+    transition: all 0.2s;
+}
+.cal-quick-ref-btn:hover {
+    background: #991b1b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
+}
+.btn-print-desk {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+}
+.btn-print-desk:hover {
+    background: #0f766e;
+    color: #ffffff;
+    border-color: #0f766e;
+}
+
+/* Print Stylesheet for Physical Desk Tent Calendar */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .topbar, .dock, .cal-unified-card, .cal-top-toolbar, .cal-header-bar, .cal-kpi-grid, .cal-agenda-section, .desk-pen-wrapper {
+        display: none !important;
+    }
+    .desk-calendar-scene, .desk-calendar-scene * {
+        visibility: visible;
+    }
+    .desk-calendar-scene {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 100%;
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        background: #ffffff !important;
+    }
+    .desk-calendar-card {
+        border: 1px solid #94a3b8;
+        box-shadow: none;
+        padding: 1.5rem;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+    .desk-cal-body-layout {
+        grid-template-columns: 1fr;
+    }
+    .desk-cal-sidebar-notes {
+        display: none;
+    }
+    .desk-cal-month-year-title {
+        font-size: 1.9rem;
+    }
+}
+@media (max-width: 768px) {
+    .desk-calendar-scene {
+        padding: 1.25rem 0.85rem;
+    }
+    .desk-calendar-card {
+        padding: 1.25rem 0.85rem;
+    }
+    .desk-spiral-binding {
+        padding: 0 15px;
+    }
+    .desk-cal-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
+    .desk-cal-title-area {
+        text-align: left;
+    }
+    .desk-cal-day-box {
+        min-height: 80px;
+        padding: 0.25rem;
+    }
+    .desk-bottom-notes-grid {
+        grid-template-columns: 1fr;
+    }
+    .desk-bottom-notes-col:first-child {
+        border-right: none;
+        border-bottom: 1px solid #cbd5e1;
+    }
+}
+
+/* ===================================================
+   DESK CALENDAR ENHANCEMENTS: FLIP ANIMATION & PEN MODE
+   =================================================== */
+@keyframes deskPageFlip {
+    0% { transform: perspective(1200px) rotateX(0deg); opacity: 1; }
+    40% { transform: perspective(1200px) rotateX(10deg) scale(0.985); opacity: 0.78; }
+    100% { transform: perspective(1200px) rotateX(0deg) scale(1); opacity: 1; }
+}
+.desk-calendar-card.flipping {
+    animation: deskPageFlip 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Handwritten Annotations inside Calendar Cells matching reference photo */
+.desk-event-annotation.annot-handwritten {
+    font-family: 'Kalam', 'Caveat', cursive, sans-serif !important;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.22;
+    border-radius: 4px;
+    padding: 2.5px 5px;
+    margin-bottom: 3px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.desk-event-annotation.annot-handwritten i {
+    font-size: 0.82rem;
+}
+
+/* Pen Mode: writing with virtual ballpoint pen */
+body.pen-mode-active {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%230f766e'%3E%3Cpath d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z'/%3E%3C/svg%3E"), crosshair !important;
+}
+body.pen-mode-active * {
+    cursor: inherit !important;
+}
+.desk-pen-assembly {
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+}
+.desk-pen-assembly:hover {
+    transform: rotate(-1.5deg) translateY(-4px) scale(1.04);
+    filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.2));
+}
+.desk-pen-assembly.is-active {
+    transform: rotate(1deg) translateY(-8px) scale(1.08);
+    filter: drop-shadow(0 8px 18px rgba(15, 118, 110, 0.4));
+}
+
+/* Interactive Ruled Notebook Lines for Typing Notes */
+.desk-note-input {
+    border: none;
+    background: transparent;
+    font-family: 'Kalam', 'Caveat', cursive, sans-serif;
+    font-size: 0.92rem;
+    color: #1e293b;
+    width: 100%;
+    outline: none;
+    padding: 0 4px;
+    line-height: 28px;
+    height: 28px;
+    border-bottom: 1px dashed transparent;
+    transition: all 0.2s;
+}
+.desk-note-input:focus,
+.desk-note-input:hover {
+    border-bottom-color: #0f766e;
+    background: rgba(15, 118, 110, 0.05);
+}
+.desk-note-input::placeholder {
+    color: #94a3b8;
+    font-style: italic;
+    opacity: 0.65;
+}
+.desk-note-item-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    position: relative;
+}
+.desk-note-del-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.desk-note-item-wrap:hover .desk-note-del-btn {
+    opacity: 1;
+}
+.desk-note-del-btn:hover {
+    color: #ef4444;
+}
+
+/* ===================================================
+   ANTAM CALENDAR SUITE: EXECUTIVE CONTROLS, TOOLBAR & AGENDA
+   =================================================== */
+
+/* 1. Main Top Toolbar */
+.cal-top-toolbar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.15rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.cal-title-box {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cal-title-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(15, 118, 110, 0.25);
+}
+
+.cal-main-heading {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1.25;
+}
+
+.cal-sub-heading {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0.25rem 0 0 0;
+    font-weight: 500;
+}
+
+.cal-tools-right {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.cal-quick-ref-btn {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.46rem 0.85rem;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-decoration: none;
+}
+.cal-quick-ref-btn:hover {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
+}
+
+.btn-print-desk {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.46rem 0.85rem;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.btn-print-desk:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.cal-search-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.45rem 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.cal-search-box:focus-within {
+    border-color: #0f766e;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+}
+
+.cal-search-box i {
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+.cal-search-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.84rem;
+    color: #1e293b;
+    width: 210px;
+    font-family: inherit;
+}
+
+.cal-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.cal-select-input {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.46rem 0.85rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.cal-select-input:hover,
+.cal-select-input:focus {
+    border-color: #0f766e;
+    background: #ffffff;
+}
+
+/* 2. Header Bar: Month Navigation, Status Pills & Selectors */
+.cal-header-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
+.cal-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.cal-nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.cal-nav-btn:hover {
+    background: #0f766e;
+    color: #ffffff;
+    border-color: #0f766e;
+    transform: scale(1.05);
+}
+
+.cal-month-title {
+    font-size: 1.18rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    min-width: 155px;
+    text-align: center;
+    letter-spacing: -0.01em;
+}
+
+.cal-today-btn {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    color: #0f766e;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.45rem 0.85rem;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cal-today-btn:hover {
+    background: #0f766e;
+    color: #ffffff;
+    border-color: #0f766e;
+}
+
+/* Status Filter Pills */
+.cal-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #f8fafc;
+    padding: 0.3rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.cal-filter-pill {
+    border: 1px solid transparent;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.42rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.18s ease;
+    font-family: inherit;
+}
+
+.cal-filter-pill:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.cal-filter-pill.active {
+    background: #ffffff;
+    color: #0f172a;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.cal-filter-pill.pill-completed.active {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+}
+
+.cal-filter-pill.pill-upcoming.active {
+    background: #f0f9ff;
+    color: #0284c7;
+    border-color: #bae6fd;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot-green { background: #10b981; }
+.dot-blue  { background: #0284c7; }
+.dot-amber { background: #f59e0b; }
+
+/* Right Controls: Month/Year Dropdown & Weekday Toggle */
+.cal-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.cal-week-start-toggle {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+}
+
+.cal-toggle-btn {
+    border: none;
+    background: transparent;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.32rem 0.65rem;
+    border-radius: 6px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cal-toggle-btn.active {
+    background: #0f766e;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 3. Desk Calendar Day Box Enhancements */
+.desk-cal-day-box {
+    position: relative;
+}
+
+.desk-cal-add-btn {
+    opacity: 0;
+    visibility: hidden;
+    background: #f1f5f9;
+    color: #0f766e;
+    border: 1px solid #cbd5e1;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.desk-cal-day-box:hover .desk-cal-add-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.desk-cal-add-btn:hover {
+    background: #0f766e;
+    color: #ffffff;
+    border-color: #0f766e;
+    transform: scale(1.15);
+}
+
+/* Event Badge inside Calendar Cells (Clean & Professional without Dots) */
+.cal-date-event-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-top: 4px;
+    min-width: 0;
+}
+
+.cal-date-event-pill.event-done {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.cal-date-event-pill.event-done:hover {
+    background: #dcfce7;
+    border-color: #86efac;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(22, 101, 52, 0.12);
+}
+
+.cal-date-event-pill.event-plan {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+}
+
+.cal-date-event-pill.event-plan:hover {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(3, 105, 161, 0.12);
+}
+
+.cal-event-pill-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cal-event-pill-count {
+    font-size: 0.65rem;
+    font-weight: 800;
+    background: #0f766e;
+    color: #ffffff;
+    padding: 1px 5px;
+    border-radius: 99px;
+    flex-shrink: 0;
+    line-height: 1.1;
+}
+
+/* 4. KPI Ribbon Grid */
+.cal-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.1rem;
+    margin: 1.5rem 0;
+}
+
+.cal-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cal-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+}
+
+.cal-kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.kpi-icon-teal  { background: #ccfbf1; color: #0f766e; }
+.kpi-icon-green { background: #dcfce7; color: #16a34a; }
+.kpi-icon-blue  { background: #e0f2fe; color: #0284c7; }
+.kpi-icon-amber { background: #fef3c7; color: #d97706; }
+
+.cal-kpi-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.cal-kpi-num {
+    font-size: 1.55rem;
+    font-weight: 800;
+    font-family: var(--font-mono, monospace);
+    color: #0f172a;
+    line-height: 1.15;
+}
+
+.cal-kpi-lbl {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-top: 0.2rem;
+}
+
+/* 5. Agenda Section Below Desk Calendar */
+.cal-agenda-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 1.5rem 1.75rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+
+.cal-agenda-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 1.15rem;
+    margin-bottom: 1.4rem;
+}
+
+.cal-agenda-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cal-agenda-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.cal-agenda-col {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.cal-agenda-col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.95rem;
+    border-radius: 10px;
+    margin-bottom: 1.15rem;
+}
+
+.cal-agenda-col:nth-child(1) .cal-agenda-col-header {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+}
+
+.cal-agenda-col:nth-child(2) .cal-agenda-col-header {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+}
+
+.cal-agenda-col-title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.cal-agenda-badge-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 99px;
+}
+
+.badge-count-completed {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.badge-count-upcoming {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.cal-agenda-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    flex: 1;
+}
+
+.cal-agenda-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cal-agenda-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.07);
+    border-color: #cbd5e1;
+}
+
+.cal-agenda-card.card-completed {
+    border-left: 4px solid #10b981;
+}
+
+.cal-agenda-card.card-upcoming {
+    border-left: 4px solid #0284c7;
+}
+
+.cal-agenda-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.55rem;
+}
+
+.cal-agenda-date-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono, monospace);
+}
+
+.cal-agenda-status-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pill-status-done {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.pill-status-upcoming {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.cal-agenda-card-title {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0 0 0.55rem 0;
+    line-height: 1.35;
+}
+
+.cal-agenda-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-bottom: 0.85rem;
+}
+
+.cal-agenda-card-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.cal-agenda-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.65rem;
+}
+
+.sf-btn-outline {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s ease;
+}
+
+.sf-btn-outline:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.sf-btn-teal {
+    background: #0f766e;
+    border: none;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s ease;
+}
+
+.sf-btn-teal:hover {
+    background: #115e59;
+    transform: translateY(-1px);
+}
+
+.cal-empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.cal-empty-state i {
+    font-size: 2.2rem;
+}
+
+/* 6. Date Click Modal & Quick Add Activity Styling */
+.cal-date-modal-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.cal-date-header-card {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+}
+
+.cal-date-header-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.cal-date-header-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.cal-date-header-sub {
+    font-size: 0.78rem;
+    opacity: 0.88;
+    margin-top: 0.2rem;
+}
+
+.cal-date-badge-pill {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+
+.cal-date-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.cal-date-event-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    transition: all 0.15s ease;
+}
+
+.cal-date-event-item:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.cal-quick-add-section {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 1.15rem;
+}
+
+.cal-quick-add-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 0.85rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.cal-quick-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+}
+
+.cal-form-full {
+    grid-column: 1 / -1;
+}
+
+/* Responsive adjustments for toolbar */
+@media (max-width: 1024px) {
+    .cal-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .cal-agenda-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .cal-top-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+    }
+    .cal-tools-right {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .cal-search-box {
+        width: 100%;
+    }
+    .cal-search-input {
+        width: 100%;
+    }
+    .cal-header-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.85rem;
+    }
+    .cal-nav-group {
+        justify-content: space-between;
+    }
+    .cal-filter-pills {
+        overflow-x: auto;
+        width: 100%;
+    }
+    .cal-actions-right {
+        justify-content: space-between;
+        width: 100%;
+    }
+    .cal-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+    .cal-quick-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===================================================
+   UNIFIED EXECUTIVE CALENDAR PANEL & NOTICE MODAL
+   =================================================== */
+
+/* Unified Executive Calendar Panel */
+.cal-unified-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 1.25rem 1.6rem;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    margin-bottom: 1.5rem;
+}
+
+.cal-card-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.15rem;
+}
+
+.cal-card-divider {
+    height: 1px;
+    background: #f1f5f9;
+    width: 100%;
+}
+
+.cal-card-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* Calendar Date Click Confirmation Notice Modal */
+.cal-notice-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.cal-notice-header-card {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 1.15rem 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    box-shadow: 0 6px 16px rgba(15, 118, 110, 0.22);
+}
+
+.cal-notice-icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+}
+
+.cal-notice-badge-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.85);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.cal-notice-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.25;
+}
+
+.cal-notice-site {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.88);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.cal-notice-events-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.cal-notice-events-header {
+    margin-bottom: 0.6rem;
+}
+
+.cal-notice-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cal-notice-event-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.cal-notice-empty-state {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: #64748b;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.2rem;
+}
+
+.cal-notice-prompt-box {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.cal-notice-prompt-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #0f766e;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(15, 118, 110, 0.25);
+}
+
+.cal-notice-prompt-text h5 {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 0.35rem 0;
+    line-height: 1.35;
+}
+
+.cal-notice-prompt-text p {
+    font-size: 0.82rem;
+    color: #475569;
+    margin: 0;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .cal-unified-card {
+        padding: 1rem;
+    }
+    .cal-card-top-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .cal-card-nav-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .cal-notice-header-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+
+
 
 

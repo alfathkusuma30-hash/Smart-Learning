@@ -12,7 +12,7 @@
             "email": "egy.pratama@antam.com",
             "phone": "0812-3456-7890",
             "avatar_color": "#d4af37",
-            "bio": "Operator Tambang Bawah Tanah Site Pongkor. Fokus pada pemenuhan K3 dan standar operasional ESDM.",
+            "bio": "Operator Operasional Site Pomalaa. Fokus pada pemenuhan K3 dan standar operasional ESDM.",
             "reminder_freq": "24 Jam",
             "wa_notif": true
         },
@@ -44,7 +44,7 @@
             "email": "andi.wijaya@antam.com",
             "phone": "0811-2233-4455",
             "avatar_color": "#a855f7",
-            "bio": "Koordinator Pergudangan dan Distribusi Handak Site Pongkor.",
+            "bio": "Koordinator Pergudangan dan Distribusi Logistik Site Pomalaa.",
             "reminder_freq": "24 Jam",
             "wa_notif": false
         },
@@ -133,7 +133,7 @@
             "id": "act_1",
             "user_username": "egy",
             "user_name": "Egy Pratama",
-            "title": "Safety Induction Site Tambang Pongkor",
+            "title": "Safety Induction Site Pomalaa",
             "type": "Wajib K3",
             "category": "Keselamatan Kerja",
             "duration": "1 Hari (8 Jam)",
@@ -209,7 +209,7 @@
         },
         {
             "id": "lna_2",
-            "title": "Safety Induction Site Tambang Pongkor",
+            "title": "Safety Induction Site Pomalaa",
             "code": "ANTAM-SAF-02",
             "category": "K3 & Keselamatan",
             "type": "Wajib",
@@ -407,7 +407,7 @@
             "title": "Eskalasi Level 1: Egy Pratama",
             "message": "Safety Induction Overdue (+1 Hari). Izin masuk site underground terancam dibekukan.",
             "related_user": "Egy Pratama",
-            "related_course": "Safety Induction Site Tambang Pongkor",
+            "related_course": "Safety Induction Site Pomalaa",
             "created_at": "2026-08-12 08:30:00",
             "status": "unread"
         },

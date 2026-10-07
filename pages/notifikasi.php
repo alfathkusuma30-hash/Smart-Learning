@@ -155,7 +155,7 @@ $countAllAdmin = $countReq + $countEsc + $countVerif;
                 <div class="notif-details-col">
                     <div class="notif-time-badge font-mono"><i class="ph-fill ph-clock"></i> 08:30 WIB · Alarm Otomatis</div>
                     <h3 class="notif-headline">
-                        Egy Pratama — <span class="text-underline">Safety Induction Site Tambang Pongkor</span>
+                        Egy Pratama — <span class="text-underline">Safety Induction Site Pomalaa</span>
                     </h3>
 
                     <div class="escalation-metadata-box">
@@ -175,11 +175,11 @@ $countAllAdmin = $countReq + $countEsc + $countVerif;
 
                     <!-- Direct Action Buttons for Admin -->
                     <div class="notif-action-row">
-                        <button class="btn-action-primary bg-green-solid" onclick="sendWhatsAppNudge('Egy Pratama', 'Safety Induction Site Tambang Pongkor', 'notif-item-1', 'egy')">
+                        <button class="btn-action-primary bg-green-solid" onclick="sendWhatsAppNudge('Egy Pratama', 'Safety Induction Site Pomalaa', 'notif-item-1', 'egy')">
                             <i class="ph-fill ph-whatsapp-logo"></i>
                             <span>Nudge WA</span>
                         </button>
-                        <button class="btn-action-outline" onclick="openRescheduleModal('Egy Pratama', 'Safety Induction Site Tambang Pongkor')">
+                        <button class="btn-action-outline" onclick="openRescheduleModal('Egy Pratama', 'Safety Induction Site Pomalaa')">
                             <i class="ph-fill ph-calendar-plus"></i>
                             <span>Dispensasi</span>
                         </button>
@@ -300,7 +300,7 @@ $countAllAdmin = $countReq + $countEsc + $countVerif;
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <!-- 3. ALARM DEADLINE K3 SITE PONGKOR -->
+        <!-- 3. ALARM DEADLINE K3 SITE POMALAA -->
         <div class="notif-card urgent glass-panel mb-3 p-4" id="emp-notif-1" style="background: white; border-radius: var(--radius-md); border-left: 5px solid #ef4444;">
             <div class="flex items-start gap-3">
                 <div class="mini-avatar" style="background: #fee2e2; color: #b91c1c; width: 44px; height: 44px; font-size: 1.35rem; flex-shrink: 0;">
@@ -309,7 +309,7 @@ $countAllAdmin = $countReq + $countEsc + $countVerif;
                 <div class="flex-1">
                     <div class="flex items-center justify-between mb-1">
                         <div class="flex items-center gap-2">
-                            <h4 class="font-semibold text-base text-dark" id="emp-notif-1-title">Safety Induction Site Tambang Pongkor</h4>
+                            <h4 class="font-semibold text-base text-dark" id="emp-notif-1-title">Safety Induction Site Pomalaa</h4>
                             <span class="tag tag-red text-xs" id="emp-notif-1-tag">Deadline Hari Ini!</span>
                         </div>
                         <span class="text-xs text-muted font-mono">12 Agu 2026</span>
@@ -344,7 +344,7 @@ $countAllAdmin = $countReq + $countEsc + $countVerif;
                         </div>
                         <span class="text-xs text-muted font-mono">14 Agu 2026</span>
                     </div>
-                    <p class="text-sm text-muted mb-3">Regulasi ESDM No. 1827/2018. Wajib bagi seluruh asisten foreman & supervisor lapangan Site Pongkor.</p>
+                    <p class="text-sm text-muted mb-3">Regulasi ESDM No. 1827/2018. Wajib bagi seluruh asisten foreman & supervisor lapangan Site Pomalaa.</p>
                     <div class="notif-actions flex gap-2">
                         <a href="?page=my_learning" class="btn-dark text-xs">
                             <i class="ph-fill ph-books"></i> Lanjutkan Belajar

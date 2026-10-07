@@ -9,6 +9,12 @@ $pendingCountHome = ($user_type === 'Admin') ? count(get_activities(null, 'menun
 <div class="home-container">
     <!-- Top Welcome Banner -->
     <div class="home-hero-banner">
+        <!-- Silhouette / Watermark Artwork (Learning & Mining Synthesis) -->
+        <div class="hero-banner-watermark" aria-hidden="true">
+            <div class="hero-banner-watermark-glow"></div>
+            <div class="hero-banner-watermark-img"></div>
+        </div>
+
         <div class="hero-left">
             <div class="hero-tag">
                 <i class="ph-fill ph-sparkle text-accent"></i>
@@ -19,20 +25,24 @@ $pendingCountHome = ($user_type === 'Admin') ? count(get_activities(null, 'menun
             </h1>
             <div class="hero-badges-row">
                 <span class="hero-badge"><i class="ph-fill ph-identification-badge"></i> <strong><?php echo $user_role; ?></strong></span>
-                <span class="hero-badge"><i class="ph-fill ph-calendar"></i> <strong id="hero-date-display">12 Agu 2026</strong></span>
+                <span class="hero-badge" title="Tanggal Nyata Real-Time"><i class="ph-fill ph-calendar"></i> <strong id="hero-date-display"><?php echo get_realtime_indonesian_date('day_short'); ?></strong></span>
                 <span class="hero-badge highlight"><i class="ph-fill ph-bell-ringing"></i> <strong id="hero-acc-status"><?php echo $user_type == 'Admin' ? ($pendingCountHome > 0 ? "{$pendingCountHome} Menunggu ACC" : "Sistem Siap") : '3 Modul'; ?></strong></span>
             </div>
         </div>
         
         <div class="hero-right-widget">
-            <div class="widget-circle-progress">
+            <?php 
+                $progVal = $user_type == 'Admin' ? 88 : 45;
+                $progLbl = $user_type == 'Admin' ? 'Compliance' : 'Progres';
+            ?>
+            <div class="widget-circle-progress" style="background: radial-gradient(circle, rgba(2, 44, 34, 0.92) 58%, transparent 63%), conic-gradient(#34d399 0% <?php echo $progVal; ?>%, rgba(255, 255, 255, 0.15) <?php echo $progVal; ?>% 100%);">
                 <div class="progress-info">
-                    <span class="progress-val"><?php echo $user_type == 'Admin' ? '88%' : '45%'; ?></span>
-                    <span class="progress-lbl"><?php echo $user_type == 'Admin' ? 'Compliance' : 'Progres'; ?></span>
+                    <span class="progress-val"><?php echo $progVal; ?>%</span>
+                    <span class="progress-lbl"><?php echo $progLbl; ?></span>
                 </div>
             </div>
             <div class="widget-quick-btn">
-                <a href="?page=<?php echo $user_type == 'Admin' ? 'admin_panel' : 'my_learning'; ?>" class="btn-dark w-full text-center">
+                <a href="?page=<?php echo $user_type == 'Admin' ? 'admin_panel' : 'my_learning'; ?>" class="btn-hero-action w-full text-center">
                     <i class="ph-bold ph-arrow-circle-right"></i>
                     <span><?php echo $user_type == 'Admin' ? 'Audit' : 'Belajar'; ?></span>
                 </a>

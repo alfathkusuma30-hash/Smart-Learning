@@ -14,6 +14,7 @@ if ($activeUser) {
     $_SESSION['user_role'] = $activeUser['role'];
     $_SESSION['user_dept'] = $activeUser['dept'];
     $_SESSION['avatar_color'] = $activeUser['avatar_color'];
+    $_SESSION['avatar_image'] = $activeUser['avatar_image'] ?? null;
     $_SESSION['user_type'] = $activeUser['type'];
 }
 
@@ -45,7 +46,7 @@ if ($_SESSION['user_type'] === 'Admin') {
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@600;700&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -88,7 +89,7 @@ if ($_SESSION['user_type'] === 'Admin') {
                 <!-- Clock & Date Display -->
                 <div class="system-clock-box">
                     <i class="ph-bold ph-calendar-blank text-accent"></i>
-                    <span id="sys-time" class="font-mono">12 Agu 2026</span>
+                    <span id="sys-time" class="font-mono"><?php echo get_realtime_indonesian_date('short') . ' · ' . date('H:i:s'); ?></span>
                 </div>
             </div>
             
@@ -110,11 +111,15 @@ if ($_SESSION['user_type'] === 'Admin') {
                         <span class="user-fullname"><?php echo strtoupper(htmlspecialchars($_SESSION['user_name'])); ?></span>
                         <span class="user-division"><?php echo htmlspecialchars(isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'Mining Operations'); ?></span>
                     </div>
-                    <div class="mini-avatar" style="background: <?php echo isset($_SESSION['avatar_color']) ? $_SESSION['avatar_color'] : 'var(--accent)'; ?>">
-                        <?php 
-                        $nameParts = explode(' ', $_SESSION['user_name']);
-                        echo count($nameParts) > 1 ? strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1)) : strtoupper(substr($_SESSION['user_name'], 0, 2));
-                        ?>
+                    <div class="mini-avatar" style="background: <?php echo isset($_SESSION['avatar_color']) ? $_SESSION['avatar_color'] : 'var(--accent)'; ?>; overflow: hidden; padding: 0;">
+                        <?php if (!empty($_SESSION['avatar_image']) && file_exists(__DIR__ . '/uploads/avatars/' . $_SESSION['avatar_image'])): ?>
+                            <img src="uploads/avatars/<?php echo htmlspecialchars($_SESSION['avatar_image']); ?>" alt="Foto Profil" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">
+                        <?php else: ?>
+                            <?php 
+                            $nameParts = explode(' ', $_SESSION['user_name']);
+                            echo count($nameParts) > 1 ? strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1)) : strtoupper(substr($_SESSION['user_name'], 0, 2));
+                            ?>
+                        <?php endif; ?>
                     </div>
                 </a>
 
@@ -231,10 +236,10 @@ if ($_SESSION['user_type'] === 'Admin') {
                             </div>
                             <div class="sunfish-top-actions">
                                 <?php if ($_SESSION['user_type'] === 'Admin'): ?>
-                                    <button class="btn-pill-teal" onclick="window.location.href='?page=learning_bank'"><i class="ph-bold ph-plus"></i> + Add</button>
+                                    <button class="btn-pill-teal" onclick="window.location.href='?page=learning_bank'"><i class="ph-bold ph-plus"></i> Add</button>
                                     <button class="btn-pill-outline" onclick="window.location.href='?page=reports'"><i class="ph-bold ph-dots-three"></i> More</button>
                                 <?php else: ?>
-                                    <button class="btn-pill-teal" onclick="openNewActivityModal()"><i class="ph-bold ph-plus"></i> + Add</button>
+                                    <button class="btn-pill-teal" onclick="openNewActivityModal()"><i class="ph-bold ph-plus"></i> Add</button>
                                     <button class="btn-pill-outline" onclick="window.location.href='?page=learning_bank'"><i class="ph-bold ph-dots-three"></i> More</button>
                                 <?php endif; ?>
                             </div>

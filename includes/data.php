@@ -14,6 +14,34 @@ require_once __DIR__ . '/db.php';
 // ==========================================================
 
 /**
+ * Format tanggal Indonesia secara real-time.
+ */
+function get_realtime_indonesian_date(string $format = 'day_short', ?int $timestamp = null): string {
+    if ($timestamp === null) $timestamp = time();
+    $days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    $months = ['','Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    $monthsLong = ['','Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    $w = (int)date('w', $timestamp);
+    $d = date('d', $timestamp);
+    $m = (int)date('m', $timestamp);
+    $y = date('Y', $timestamp);
+    $time = date('H:i:s', $timestamp);
+
+    if ($format === 'short') {
+        return "{$d} {$months[$m]} {$y}";
+    } elseif ($format === 'time') {
+        return "{$d} {$months[$m]} {$y} · {$time}";
+    } elseif ($format === 'full_time') {
+        return "{$days[$w]}, {$d} {$months[$m]} {$y} · {$time} WITA";
+    } elseif ($format === 'long') {
+        return "{$days[$w]}, {$d} {$monthsLong[$m]} {$y}";
+    } else {
+        return "{$days[$w]}, {$d} {$months[$m]} {$y}";
+    }
+}
+
+/**
  * Ubah mysqli_result row menjadi array asosiatif bersih.
  * Konversi tipe: TINYINT(1) -> bool, angka -> int/float.
  */
@@ -55,6 +83,9 @@ function _row_to_array(array $row): array {
             $colors = ['admin' => '#10b981', 'egy' => '#d4af37', 'budi' => '#38bdf8', 'andi' => '#a855f7'];
             $row['avatar_color'] = $colors[$uLower] ?? '#0f766e';
         }
+        if (!isset($row['avatar_image'])) {
+            $row['avatar_image'] = null;
+        }
         if (!isset($row['nrp']) || $row['nrp'] === null) {
             $nrps = ['egy' => 'ANTAM-08912', 'budi' => 'ANTAM-07844', 'andi' => 'ANTAM-06519', 'admin' => 'ANTAM-HC001'];
             $row['nrp'] = $nrps[$uLower] ?? '';
@@ -88,6 +119,39 @@ function _row_to_array(array $row): array {
     }
 
     return $row;
+}
+
+if (!function_exists('_parse_indonesian_date_to_iso')) {
+function _parse_indonesian_date_to_iso($str) {
+    if (empty($str)) return null;
+    $str = trim($str);
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $str, $m)) {
+        return "{$m[1]}-{$m[2]}-{$m[3]}";
+    }
+    $months = [
+        'jan' => '01', 'januari' => '01', 'january' => '01',
+        'feb' => '02', 'februari' => '02', 'february' => '02',
+        'mar' => '03', 'maret' => '03', 'march' => '03',
+        'apr' => '04', 'april' => '04',
+        'mei' => '05', 'may' => '05',
+        'jun' => '06', 'juni' => '06', 'june' => '06',
+        'jul' => '07', 'juli' => '07', 'july' => '07',
+        'agu' => '08', 'agustus' => '08', 'aug' => '08', 'august' => '08',
+        'sep' => '09', 'september' => '09',
+        'okt' => '10', 'oktober' => '10', 'oct' => '10', 'october' => '10',
+        'nov' => '11', 'november' => '11',
+        'des' => '12', 'desember' => '12', 'dec' => '12', 'december' => '12',
+    ];
+    if (preg_match('/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/', $str, $m)) {
+        $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+        $mLower = strtolower($m[2]);
+        $mon = $months[$mLower] ?? null;
+        if ($mon) return "{$m[3]}-{$mon}-{$day}";
+    }
+    $ts = strtotime($str);
+    if ($ts !== false && $ts > 0) return date('Y-m-d', $ts);
+    return null;
+}
 }
 
 // ==========================================================
@@ -125,11 +189,29 @@ function get_user_by_username(string $username): ?array {
     return $row ? _row_to_array($row) : null;
 }
 
-function authenticate_user(string $username, string $password): array {
-    $user = get_user_by_username($username);
+function get_user_by_identifier(string $identifier): ?array {
+    $db = get_db();
+    if (!$db) return null;
+    $key  = strtolower(trim($identifier));
+    $stmt = $db->prepare("SELECT * FROM `users` WHERE `username` = ? OR LOWER(`email`) = ?");
+    if (!$stmt) return null;
+    $stmt->bind_param('ss', $key, $key);
+    $stmt->execute();
+    $res  = $stmt->get_result();
+    if (!$res || !($res instanceof mysqli_result)) {
+        $stmt->close();
+        return null;
+    }
+    $row  = $res->fetch_assoc();
+    $stmt->close();
+    return $row ? _row_to_array($row) : null;
+}
+
+function authenticate_user(string $identifier, string $password): array {
+    $user = get_user_by_identifier($identifier);
 
     if (!$user) {
-        return ['success' => false, 'message' => 'Username tidak ditemukan. Periksa kembali username Anda.'];
+        return ['success' => false, 'message' => 'Username atau email tidak ditemukan. Periksa kembali kredensial Anda.'];
     }
 
     $stored = $user['password'] ?? '';
@@ -160,6 +242,337 @@ function authenticate_user(string $username, string $password): array {
     return ['success' => true, 'user' => $user];
 }
 
+/**
+ * Sensor alamat email untuk tampilan keamanan yang rapi (cth: eg*******ma@antam.com)
+ */
+function mask_email(string $email): string {
+    $email = trim($email);
+    if (empty($email) || strpos($email, '@') === false) {
+        return 'email terdaftar Anda';
+    }
+    list($user, $domain) = explode('@', $email, 2);
+    $len = strlen($user);
+    if ($len <= 2) {
+        $maskedUser = substr($user, 0, 1) . '***';
+    } else {
+        $maskedUser = substr($user, 0, 2) . str_repeat('*', max(3, $len - 4)) . substr($user, -2);
+    }
+    return $maskedUser . '@' . $domain;
+}
+
+/**
+ * Kirim email resmi PT ANTAM Tbk berisi kode OTP verifikasi 2FA
+ */
+function send_2fa_email(string $toEmail, string $name, string $otpCode, string $roleTitle): bool {
+    if (empty($toEmail)) return false;
+
+    $subject = "Kode OTP Keamanan (2FA): " . $otpCode . " — Smart Learning PT ANTAM Tbk";
+    
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: Smart Learning ANTAM <security@antam.com>\r\n";
+    $headers .= "Reply-To: Human Capital & Biro L&D <lnd-support@antam.com>\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+
+    $message = "
+    <!DOCTYPE html>
+    <html lang='id'>
+    <head>
+      <meta charset='utf-8'>
+      <title>Kode OTP Smart Learning ANTAM</title>
+      <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 24px; color: #1e293b; }
+        .email-card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+        .header { background: linear-gradient(135deg, #0f766e, #0d9488); padding: 32px 24px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .header p { margin: 8px 0 0; font-size: 13px; opacity: 0.9; }
+        .content { padding: 32px 28px; }
+        .badge { display: inline-block; background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 5px 14px; border-radius: 99px; margin-bottom: 16px; letter-spacing: 1px; }
+        .greeting { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 12px; }
+        .desc { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
+        .otp-box { background: #f8fafc; border: 2px dashed #0f766e; border-radius: 12px; padding: 22px; text-align: center; margin: 24px 0; }
+        .otp-label { font-size: 12px; font-weight: 700; color: #64748b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+        .otp-code { font-family: 'Consolas', 'Courier New', monospace; font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #0f766e; margin: 0; }
+        .otp-timer { font-size: 12px; color: #64748b; margin-top: 10px; font-weight: 500; }
+        .security-notice { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 10px; padding: 14px 18px; font-size: 12px; color: #92400e; line-height: 1.6; margin-top: 24px; }
+        .footer { background: #f8fafc; padding: 20px 24px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; }
+      </style>
+    </head>
+    <body>
+      <div class='email-card'>
+        <div class='header'>
+          <h1>PT ANTAM Tbk &bull; Smart Learning</h1>
+          <p>Sistem Terintegrasi Pembelajaran & Kepatuhan K3 ESDM Site Pomalaa</p>
+        </div>
+        <div class='content'>
+          <div class='badge'>Autentikasi Dua Faktor (2FA)</div>
+          <div class='greeting'>Halo, " . htmlspecialchars($name) . " (" . htmlspecialchars($roleTitle) . ")</div>
+          <div class='desc'>
+            Permintaan autentikasi masuk ke akun Anda terdeteksi. Silakan gunakan 6-digit kode OTP (One-Time Password) di bawah ini untuk memverifikasi identitas Anda:
+          </div>
+          
+          <div class='otp-box'>
+            <div class='otp-label'>KODE VERIFIKASI RESMI</div>
+            <div class='otp-code'>" . htmlspecialchars($otpCode) . "</div>
+            <div class='otp-timer'>⏱ Masa berlaku kode: 10 Menit</div>
+          </div>
+          
+          <div class='security-notice'>
+            <strong>Peringatan Keamanan ANTAM:</strong> Jangan pernah memberikan kode OTP ini kepada siapa pun, termasuk administrator atau pihak yang mengaku dari Human Capital. Sistem ANTAM tidak pernah meminta kode OTP Anda melalui pesan telepon atau chat.
+          </div>
+        </div>
+        <div class='footer'>
+          &copy; " . date('Y') . " PT ANTAM Tbk &bull; Human Capital & Corporate University Pomalaa<br>
+          Pesan otomatis ini di-generate oleh Sistem Smart Learning Kepatuhan K3 ESDM.
+        </div>
+      </div>
+    </body>
+    </html>";
+
+    return @mail($toEmail, $subject, $message, $headers);
+}
+
+/**
+ * Generate dan kirim kode OTP 2FA untuk user
+ */
+function generate_and_send_2fa_otp(array $user): array {
+    $db = get_db();
+    $username = $user['username'];
+    $otpCode = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+    $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+
+    if ($db) {
+        $stmt = $db->prepare("UPDATE `users` SET `otp_code` = ?, `otp_expires_at` = ? WHERE `username` = ?");
+        if ($stmt) {
+            $stmt->bind_param('sss', $otpCode, $expiresAt, $username);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+
+    $email = !empty($user['email']) ? $user['email'] : ($username . '@antam.com');
+    $name = !empty($user['name']) ? $user['name'] : ucfirst($username);
+    $roleTitle = ($user['type'] === 'Admin') ? 'Biro Human Capital Admin' : 'Pegawai HC Operasional';
+
+    // Kirim email
+    $mailSent = send_2fa_email($email, $name, $otpCode, $roleTitle);
+
+    // Simpan ke sesi untuk verifikasi cepat dan fallback
+    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+        @session_start();
+    }
+
+    $_SESSION['pending_2fa'] = [
+        'username'     => $username,
+        'otp'          => $otpCode,
+        'expires_at'   => $expiresAt,
+        'email'        => $email,
+        'name'         => $name,
+        'type'         => $user['type'] ?? 'User',
+        'role'         => $user['role'] ?? '',
+        'dept'         => $user['dept'] ?? '',
+        'user_id'      => $user['user_id'] ?? '',
+        'avatar_color' => $user['avatar_color'] ?? '#0f766e',
+        'avatar_image' => $user['avatar_image'] ?? null,
+        'created_at'   => time()
+    ];
+
+    return [
+        'success'      => true,
+        'otp'          => $otpCode,
+        'email'        => $email,
+        'masked_email' => mask_email($email),
+        'expires_at'   => $expiresAt,
+        'mail_sent'    => $mailSent
+    ];
+}
+
+/**
+ * Verifikasi kode OTP 2FA
+ */
+function verify_2fa_otp(string $username, string $enteredOtp): array {
+    $user = get_user_by_username($username);
+    if (!$user) {
+        return ['success' => false, 'message' => 'Data pengguna tidak ditemukan. Silakan login kembali.'];
+    }
+
+    $storedOtp = $user['otp_code'] ?? null;
+    $expiresAt = $user['otp_expires_at'] ?? null;
+
+    // Check session fallback
+    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+        @session_start();
+    }
+    if ((!$storedOtp || empty($storedOtp)) && isset($_SESSION['pending_2fa']['otp'])) {
+        $storedOtp = $_SESSION['pending_2fa']['otp'];
+        $expiresAt = $_SESSION['pending_2fa']['expires_at'] ?? null;
+    }
+
+    if (empty($storedOtp)) {
+        return ['success' => false, 'message' => 'Kode OTP belum dibuat atau sesi telah kedaluwarsa. Silakan minta kode baru.'];
+    }
+
+    if ($expiresAt && strtotime($expiresAt) < time()) {
+        return ['success' => false, 'message' => 'Kode OTP telah kedaluwarsa (masa berlaku 10 menit telah habis). Silakan klik Kirim Ulang Kode.'];
+    }
+
+    if (trim($enteredOtp) !== trim((string)$storedOtp)) {
+        return ['success' => false, 'message' => 'Kode OTP yang Anda masukkan salah. Periksa kembali kotak masuk email Anda.'];
+    }
+
+    // Success! Clear OTP in database
+    $db = get_db();
+    if ($db) {
+        $stmt = $db->prepare("UPDATE `users` SET `otp_code` = NULL, `otp_expires_at` = NULL WHERE `username` = ?");
+        if ($stmt) {
+            $stmt->bind_param('s', $username);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+
+    return ['success' => true, 'user' => $user];
+}
+
+/**
+ * Pendaftaran Akun Pengguna Baru (Pegawai HC atau Biro Admin)
+ */
+function register_new_user(array $data): array {
+    $db = get_db();
+    if (!$db) {
+        return ['success' => false, 'message' => 'Koneksi ke database gagal.'];
+    }
+
+    $name = trim($data['name'] ?? '');
+    $username = strtolower(trim($data['username'] ?? ''));
+    $email = strtolower(trim($data['email'] ?? ''));
+    $password = trim($data['password'] ?? '');
+    $nrp = trim($data['nrp'] ?? '');
+    $phone = trim($data['phone'] ?? '');
+    $dept = trim($data['dept'] ?? 'Operasional Tambang Underground');
+    $portalType = trim($data['portal_type'] ?? 'User'); // 'User' (Pegawai HC) or 'Admin' (Biro)
+    $role = trim($data['role'] ?? '');
+
+    if (empty($name) || empty($username) || empty($email) || empty($password)) {
+        return ['success' => false, 'message' => 'Nama lengkap, username, email, dan kata sandi wajib diisi.'];
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'message' => 'Format email tidak valid. Gunakan format email yang benar (contoh: nama@antam.com).'];
+    }
+
+    if (strlen($username) < 3 || !preg_match('/^[a-zA-Z0-9_.-]+$/', $username)) {
+        return ['success' => false, 'message' => 'Username minimal 3 karakter dan hanya boleh berisi huruf, angka, titik, atau strip.'];
+    }
+
+    if (strlen($password) < 6) {
+        return ['success' => false, 'message' => 'Kata sandi minimal 6 karakter demi keamanan akun Anda.'];
+    }
+
+    // Check duplicate username
+    $checkUser = get_user_by_username($username);
+    if ($checkUser) {
+        return ['success' => false, 'message' => 'Username "' . htmlspecialchars($username) . '" sudah digunakan. Silakan gunakan username lain.'];
+    }
+
+    // Check duplicate email
+    $checkEmail = get_user_by_identifier($email);
+    if ($checkEmail) {
+        return ['success' => false, 'message' => 'Alamat email "' . htmlspecialchars($email) . '" sudah terdaftar. Silakan langsung masuk.'];
+    }
+
+    // Inspect columns
+    $existingCols = [];
+    $colRes = $db->query("SHOW COLUMNS FROM `users`");
+    if ($colRes) {
+        while ($c = $colRes->fetch_assoc()) {
+            $existingCols[strtolower($c['Field'])] = true;
+        }
+    }
+
+    // Generate initials for user_id
+    $nameParts = preg_split('/\s+/', $name);
+    $userId = '';
+    if (count($nameParts) > 1 && !empty($nameParts[0]) && !empty($nameParts[1])) {
+        $userId = strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1));
+    } else {
+        $userId = strtoupper(substr($username, 0, 2));
+    }
+
+    if (empty($nrp)) {
+        $nrp = 'ANTAM-' . rand(10000, 99999);
+    }
+
+    if (empty($role)) {
+        $role = ($portalType === 'Admin') ? 'Biro Human Capital & Diklat' : 'HC Pegawai Operasional';
+    }
+
+    $avatarColors = ['#0f766e', '#0284c7', '#d97706', '#7c3aed', '#e11d48', '#059669', '#2563eb', '#d4af37'];
+    $avatarColor = $avatarColors[array_rand($avatarColors)];
+    $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+
+    $fields = [
+        'username'     => $username,
+        'password'     => $passwordHash,
+        'user_id'      => $userId,
+        'nrp'          => $nrp,
+        'name'         => $name,
+        'role'         => $role,
+        'type'         => ($portalType === 'Admin') ? 'Admin' : 'User',
+        'dept'         => $dept,
+        'email'        => $email,
+        'phone'        => $phone,
+        'avatar_color' => $avatarColor,
+        'avatar_image' => $data['avatar_image'] ?? null,
+        'bio'          => 'Pegawai terdaftar Sistem Smart Learning PT ANTAM Tbk Site Pomalaa.',
+        'reminder_freq'=> ($portalType === 'Admin') ? 'Realtime' : '24 Jam',
+        'wa_notif'     => 1
+    ];
+
+    // Legacy columns sync
+    if (isset($existingCols['nama'])) {
+        $fields['nama'] = $name;
+    }
+    if (isset($existingCols['unit_kerja'])) {
+        $fields['unit_kerja'] = $dept;
+    }
+
+    $insertCols = [];
+    $insertPlaceholders = [];
+    $vals = [];
+    $types = '';
+
+    foreach ($fields as $col => $val) {
+        if (isset($existingCols[$col])) {
+            $insertCols[] = "`{$col}`";
+            $insertPlaceholders[] = "?";
+            $vals[] = $val;
+            $types .= is_int($val) ? 'i' : 's';
+        }
+    }
+
+    $sql = "INSERT INTO `users` (" . implode(', ', $insertCols) . ") VALUES (" . implode(', ', $insertPlaceholders) . ")";
+    $stmt = $db->prepare($sql);
+    if (!$stmt) {
+        return ['success' => false, 'message' => 'Gagal menyiapkan query pembuatan akun: ' . $db->error];
+    }
+
+    $stmt->bind_param($types, ...$vals);
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    if ($ok) {
+        return [
+            'success'  => true,
+            'message'  => 'Pendaftaran akun berhasil! Silakan masuk dengan kredensial baru Anda.',
+            'username' => $username,
+            'portal'   => ($portalType === 'Admin') ? 'admin' : 'pegawai'
+        ];
+    } else {
+        return ['success' => false, 'message' => 'Gagal mendaftarkan akun ke database: ' . $db->error];
+    }
+}
+
 function update_user_profile(string $username, array $profileData): array {
     $db  = get_db();
     if (!$db) {
@@ -181,7 +594,7 @@ function update_user_profile(string $username, array $profileData): array {
         }
     }
 
-    $fields = ['name','nrp','dept','email','phone','bio','avatar_color','reminder_freq'];
+    $fields = ['name','nrp','dept','email','phone','bio','avatar_color','avatar_image','reminder_freq'];
     $sets   = [];
     $vals   = [];
     $types  = '';
@@ -355,11 +768,10 @@ function add_new_activity(array $activity): array {
     }
 
     // Notifikasi ke Admin
-    $notifTplText = $certTpl ? ' (Template Sertifikat terlampir)' : '';
     _insert_notification(
         'admin', 'request',
         'Pengajuan Kegiatan: ' . $uname2,
-        $uname2 . ' mengajukan kegiatan baru: "' . $title . '"' . $notifTplText . '. Menunggu persetujuan Anda.',
+        $uname2 . ' mengajukan kegiatan baru: "' . $title . '". Menunggu persetujuan Anda.',
         $uname2, $title, $newId
     );
 
@@ -861,11 +1273,12 @@ function complete_activity_with_attendance(string $activityId, array $attendees,
 
     // 1. Update kegiatan menjadi 100% tuntas dan simpan file absensi
     $stmtUp = $db->prepare("UPDATE `activities` 
-        SET `progress` = 100, `completed_modules` = ?, `current_module` = 'Selesai — Bersertifikat Resmi', `grade` = 100,
+        SET `progress` = 100, `completed_modules` = ?, `current_module` = 'Selesai — Terverifikasi Absensi HC', `grade` = 100,
+            `attendance_file` = COALESCE(?, `attendance_file`),
             `last_attachment` = COALESCE(?, `last_attachment`), `last_submitted_at` = NOW()
         WHERE `id` = ?");
     if ($stmtUp) {
-        $stmtUp->bind_param('iss', $totalMods, $attendanceFile, $act['id']);
+        $stmtUp->bind_param('isss', $totalMods, $attendanceFile, $attendanceFile, $act['id']);
         $stmtUp->execute();
         $stmtUp->close();
     }
@@ -875,12 +1288,20 @@ function complete_activity_with_attendance(string $activityId, array $attendees,
         $attendees = [$act['user_name']];
     }
 
-    // 3. Terbitkan sertifikat otomatis untuk seluruh peserta yang ada di daftar absensi
-    $batchRes = batch_generate_certificates($courseTitle, $attendees, $templateFile, 'PT ANTAM (PERSERO) TBK — Site Pongkor');
+    // 3. Terbitkan sertifikat otomatis untuk peserta yang hadir
+    $batchRes = batch_generate_certificates($courseTitle, $attendees, $templateFile, 'PT ANTAM (PERSERO) TBK — Site Pomalaa');
+
+    // 4. Catat notifikasi bahwa absensi telah diunggah oleh HC
+    _insert_notification(
+        'admin', 'verification',
+        'Verifikasi Absensi: ' . $courseTitle,
+        'Pihak HC telah mengonfirmasi penyelesaian kegiatan "' . $courseTitle . '" dan mengunggah berkas absensi resmi.',
+        'Human Capital PT ANTAM', $courseTitle, $act['id']
+    );
 
     return [
         'success'         => true,
-        'message'         => 'Kegiatan selesai! ' . count($batchRes['generated']) . ' sertifikat resmi berhasil diterbitkan otomatis dari daftar absensi peserta.',
+        'message'         => 'Kegiatan selesai diverifikasi! Berkas absensi resmi telah tersimpan dan dapat diakses oleh Biro & Admin.',
         'activity_id'     => $act['id'],
         'course_title'    => $courseTitle,
         'attendance_file' => $attendanceFile,
@@ -1075,6 +1496,46 @@ function get_lna_catalog(): array {
         $out[] = $row;
     }
     return $out;
+}
+
+function add_catalog_course(array $course): array {
+    $db = get_db();
+    if (!$db) return ['success' => false, 'message' => 'Database tidak terhubung.'];
+
+    $code     = trim($course['code'] ?? 'TRC-NEW');
+    $title    = trim($course['title'] ?? '');
+    $category = trim($course['category'] ?? 'GENERAL');
+    $type     = trim($course['type'] ?? 'Inhouse');
+    $duration = trim($course['duration'] ?? '2 Hari (16 Jam)');
+    $level    = trim($course['level'] ?? 'Basic');
+    $desc     = trim($course['desc'] ?? '');
+
+    if (empty($title)) {
+        return ['success' => false, 'message' => 'Nama modul pelatihan wajib diisi.'];
+    }
+
+    $id = 'lna_' . time() . '_' . rand(10, 99);
+    $gapScore = 'Peningkatan Kompetensi';
+    $targetRole = 'Seluruh Pegawai Terkait';
+    $competencyArea = $category;
+    $prereq = 'Sesuai Arahan Supervisor';
+
+    $stmt = $db->prepare("INSERT INTO `lna_catalog` 
+        (`id`, `title`, `code`, `category`, `type`, `duration`, `level`, `gap_score`, `target_role`, `competency_area`, `description`, `prerequisites`) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    if (!$stmt) {
+        return ['success' => false, 'message' => 'Gagal menyiapkan query: ' . $db->error];
+    }
+
+    $stmt->bind_param('ssssssssssss', $id, $title, $code, $category, $type, $duration, $level, $gapScore, $targetRole, $competencyArea, $desc, $prereq);
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    if ($ok) {
+        return ['success' => true, 'id' => $id, 'message' => 'Modul berhasil ditambahkan ke katalog master.'];
+    } else {
+        return ['success' => false, 'message' => 'Gagal menyimpan ke database: ' . $db->error];
+    }
 }
 
 // ==========================================================

@@ -87,22 +87,10 @@ $users = get_all_users();
                     <h3 class="font-semibold text-lg text-dark mt-2 mb-1"><?php echo htmlspecialchars($req['title']); ?></h3>
                     <p class="text-sm text-muted"><strong>Catatan Pegawai:</strong> <?php echo htmlspecialchars($req['notes']); ?></p>
                     <div class="text-xs text-muted font-mono mt-2"><i class="ph-fill ph-calendar"></i> Target Deadline: <strong><?php echo htmlspecialchars($req['deadline']); ?></strong></div>
-                    <?php if (!empty($req['cert_template'])): ?>
-                    <div class="mt-2 text-xs font-mono" style="color: #0f766e; background: #f0fdfa; border: 1px solid #ccfbf1; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-                        <span class="flex items-center gap-1.5">
-                            <i class="ph-fill ph-file-image text-accent" style="font-size:1.1rem;"></i>
-                            <span>Template Sertifikat Kustom: <strong><?php echo htmlspecialchars($req['cert_template']); ?></strong></span>
-                        </span>
-                        <a href="uploads/templates/<?php echo htmlspecialchars($req['cert_template']); ?>" target="_blank" class="tag tag-teal text-xs" style="text-decoration:none; padding: 2px 8px;">
-                            <i class="ph-bold ph-eye"></i> Lihat Berkas
-                        </a>
+                    <div class="mt-2 text-xs font-mono" style="color: #0f766e; background: #f0fdfa; border: 1px solid #ccfbf1; padding: 6px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="ph-fill ph-clipboard-text text-accent"></i>
+                        <span>Verifikasi Kelulusan: <strong>Melalui Berkas Absensi Resmi Diunggah HC saat Kegiatan Selesai</strong></span>
                     </div>
-                    <?php else: ?>
-                    <div class="mt-2 text-xs font-mono" style="color: #854d0e; background: #fefce8; border: 1px solid #fef08a; padding: 5px 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="ph-fill ph-medal" style="color:#d97706;"></i>
-                        <span>Template Sertifikat: <strong>Standar Resmi PT ANTAM Gold</strong></span>
-                    </div>
-                    <?php endif; ?>
                 </div>
 
                 <div class="flex items-center justify-end gap-2 flex-wrap">
@@ -125,7 +113,7 @@ $users = get_all_users();
     <div class="section-divider-title mb-4">
         <div class="divider-left">
             <i class="ph-fill ph-users-three text-accent"></i>
-            <h2>Monitoring Pegawai Site Pongkor</h2>
+            <h2>Monitoring Pegawai Site Pomalaa</h2>
         </div>
     </div>
     
@@ -163,8 +151,12 @@ $users = get_all_users();
                 <tr id="user-row-<?php echo $uKey; ?>">
                     <td>
                         <div class="flex items-center gap-3">
-                            <div class="mini-avatar" style="background: <?php echo htmlspecialchars($u['avatar_color'] ?? '#0f766e'); ?>; width: 36px; height: 36px; font-size: 0.85rem; font-weight: 700;">
-                                <?php echo htmlspecialchars($u['user_id'] ?? strtoupper(substr($u['name'] ?? 'U', 0, 2))); ?>
+                            <div class="mini-avatar" style="background: <?php echo htmlspecialchars($u['avatar_color'] ?? '#0f766e'); ?>; width: 36px; height: 36px; font-size: 0.85rem; font-weight: 700; overflow: hidden; padding: 0;">
+                                <?php if (!empty($u['avatar_image']) && file_exists(__DIR__ . '/../uploads/avatars/' . $u['avatar_image'])): ?>
+                                    <img src="uploads/avatars/<?php echo htmlspecialchars($u['avatar_image']); ?>" alt="Foto" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">
+                                <?php else: ?>
+                                    <?php echo htmlspecialchars($u['user_id'] ?? strtoupper(substr($u['name'] ?? 'U', 0, 2))); ?>
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <div class="font-semibold"><?php echo htmlspecialchars($u['name'] ?? $uKey); ?></div>
@@ -205,7 +197,7 @@ $users = get_all_users();
                     </td>
                     <td>
                         <div class="flex gap-2">
-                            <button class="btn-outline text-xs" onclick="sendWhatsAppNudge('<?php echo addslashes($u['name']); ?>', 'Modul K3 Site Pongkor', null, '<?php echo addslashes($uKey); ?>', '<?php echo addslashes($u['phone'] ?? ''); ?>')">
+                            <button class="btn-outline text-xs" onclick="sendWhatsAppNudge('<?php echo addslashes($u['name']); ?>', 'Modul K3 Site Pomalaa', null, '<?php echo addslashes($uKey); ?>', '<?php echo addslashes($u['phone'] ?? ''); ?>')">
                                 <i class="ph-fill ph-whatsapp-logo text-green"></i> Nudge WA
                             </button>
                             <button class="btn-outline text-xs" onclick="openAssignModalForUser('<?php echo addslashes($u['name']); ?>')">
@@ -236,22 +228,20 @@ $users = get_all_users();
                     <th>PEGAWAI</th>
                     <th>TIPE & KATEGORI</th>
                     <th>DURASI</th>
-                    <th>STATUS</th>
+                    <th>PROGRESS</th>
+                    <th>BERKAS ABSENSI (HC)</th>
                     <th>TANGGAL DISETUJUI</th>
+                    <th>AKSI BIRO / HC</th>
                 </tr>
             </thead>
             <tbody id="approved-activities-tbody">
-                <?php foreach ($approvedActivities as $act): ?>
+                <?php foreach ($approvedActivities as $act): 
+                    $attFileAdmin = !empty($act['attendance_file']) ? $act['attendance_file'] : (!empty($act['last_attachment']) && (strpos($act['last_attachment'], 'absen') !== false) ? $act['last_attachment'] : null);
+                ?>
                 <tr>
                     <td>
                         <strong><?php echo htmlspecialchars($act['title']); ?></strong>
                         <div class="text-xs text-muted"><?php echo htmlspecialchars($act['current_module']); ?></div>
-                        <?php if (!empty($act['last_attachment'])): ?>
-                        <div class="mt-1 flex items-center gap-1 text-xs" style="color: #059669; font-weight: 500;">
-                            <i class="ph-fill ph-file-doc"></i>
-                            <span>Tugas Masuk: <strong><?php echo htmlspecialchars($act['last_attachment']); ?></strong></span>
-                        </div>
-                        <?php endif; ?>
                     </td>
                     <td>
                         <div class="font-semibold text-sm"><?php echo htmlspecialchars($act['user_name']); ?></div>
@@ -262,12 +252,37 @@ $users = get_all_users();
                     </td>
                     <td><?php echo htmlspecialchars($act['duration']); ?></td>
                     <td>
-                        <span class="status-badge status-success text-xs"><i class="ph-fill ph-check-circle"></i> Aktif (<?php echo isset($act['progress']) ? $act['progress'] : 0; ?>%)</span>
-                        <?php if (!empty($act['last_attachment'])): ?>
-                        <span class="status-badge status-warning text-xs mt-1 block" style="font-size: 0.7rem;"><i class="ph-fill ph-paperclip"></i> Ada Lampiran</span>
+                        <span class="status-badge status-success text-xs"><i class="ph-fill ph-check-circle"></i> <?php echo isset($act['progress']) ? $act['progress'] : 0; ?>%</span>
+                    </td>
+                    <td>
+                        <?php if ($attFileAdmin): ?>
+                        <div class="flex items-center gap-1.5 text-xs font-semibold" style="color: #0f766e; background:#f0fdf4; border:1px solid #bbf7d0; padding:4px 8px; border-radius:6px;">
+                            <i class="ph-fill ph-file-check" style="font-size:1.15rem;"></i>
+                            <span class="font-mono text-xs truncate" style="max-width:140px;" title="<?php echo htmlspecialchars($attFileAdmin); ?>"><?php echo htmlspecialchars($attFileAdmin); ?></span>
+                        </div>
+                        <?php else: ?>
+                        <span class="text-xs text-muted font-mono" style="background:#f8fafc; border:1px dashed #cbd5e1; padding:3px 7px; border-radius:4px; display:inline-block;">
+                            Belum Ada Absensi
+                        </span>
                         <?php endif; ?>
                     </td>
                     <td class="font-mono text-xs"><?php echo !empty($act['approved_at']) ? date('d M Y H:i', strtotime($act['approved_at'])) : 'Otomatis'; ?></td>
+                    <td>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <?php if ($attFileAdmin): ?>
+                            <a href="uploads/attendance/<?php echo htmlspecialchars($attFileAdmin); ?>" target="_blank" class="tag tag-teal text-xs" style="text-decoration:none; padding:4px 9px; font-weight:700;" title="Biro & Admin dapat melihat dan mengunduh berkas absensi resmi">
+                                <i class="ph-bold ph-eye"></i> Lihat Absensi
+                            </a>
+                            <button type="button" class="btn-outline text-xs" style="padding:3px 7px; font-size:0.7rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')" title="Update Berkas Absensi Kegiatan">
+                                <i class="ph-bold ph-upload-simple"></i> Update
+                            </button>
+                            <?php else: ?>
+                            <button type="button" class="btn-dark text-xs" style="padding:4px 9px; font-size:0.725rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')" title="Konfirmasi Selesai & Upload Berkas Absensi HC">
+                                <i class="ph-bold ph-upload-simple"></i> Upload Absensi (HC)
+                            </button>
+                            <?php endif; ?>
+                        </div>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

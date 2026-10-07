@@ -6,6 +6,9 @@
  * Konfigurasi koneksi MySQL. Ubah DB_PASS jika MySQL Anda menggunakan password.
  */
 
+// --- SET REAL-TIME TIMEZONE (Site Pomalaa WITA / UTC+8) ---
+date_default_timezone_set('Asia/Makassar');
+
 // --- AUTO-DETECT ENVIRONMENT ---
 $is_localhost = false;
 if (isset($_SERVER['HTTP_HOST'])) {
@@ -51,10 +54,13 @@ function _ensure_users_columns_exist(mysqli $conn): void {
         'email' => "VARCHAR(100) DEFAULT NULL",
         'phone' => "VARCHAR(50) DEFAULT NULL",
         'avatar_color' => "VARCHAR(20) DEFAULT '#0f766e'",
+        'avatar_image' => "VARCHAR(255) DEFAULT NULL",
         'bio' => "TEXT DEFAULT NULL",
         'reminder_freq' => "VARCHAR(50) DEFAULT '24 Jam'",
         'wa_notif' => "TINYINT(1) NOT NULL DEFAULT 1",
         'type' => "ENUM('User','Admin') NOT NULL DEFAULT 'User'",
+        'otp_code' => "VARCHAR(20) DEFAULT NULL",
+        'otp_expires_at' => "DATETIME DEFAULT NULL",
         'created_at' => "DATETIME DEFAULT CURRENT_TIMESTAMP"
     ];
 
@@ -82,7 +88,7 @@ function _ensure_users_columns_exist(mysqli $conn): void {
     $conn->query("UPDATE `users` SET 
         `user_id` = 'EP', `nrp` = 'ANTAM-08912', `role` = 'Operasional Tambang', `dept` = 'Mining Operations Underground', 
         `email` = 'egy.pratama@antam.com', `phone` = '0812-3456-7890', `avatar_color` = '#d4af37', 
-        `bio` = 'Operator Tambang Bawah Tanah Site Pongkor. Fokus pada pemenuhan K3 dan standar operasional ESDM.', 
+        `bio` = 'Operator Tambang Bawah Tanah Site Pomalaa. Fokus pada pemenuhan K3 dan standar operasional ESDM.', 
         `reminder_freq` = '24 Jam', `wa_notif` = 1 
         WHERE `username` = 'egy'");
 
@@ -96,7 +102,7 @@ function _ensure_users_columns_exist(mysqli $conn): void {
     $conn->query("UPDATE `users` SET 
         `user_id` = 'AW', `nrp` = 'ANTAM-06519', `role` = 'Logistik & Gudang', `dept` = 'Supply Chain & Bahan Peledak', 
         `email` = 'andi.wijaya@antam.com', `phone` = '0811-2233-4455', `avatar_color` = '#a855f7', 
-        `bio` = 'Koordinator Pergudangan dan Distribusi Handak Site Pongkor.', 
+        `bio` = 'Koordinator Pergudangan dan Distribusi Handak Site Pomalaa.', 
         `reminder_freq` = '24 Jam', `wa_notif` = 0 
         WHERE `username` = 'andi'");
 
@@ -122,6 +128,12 @@ function _ensure_users_columns_exist(mysqli $conn): void {
     $resActTpl = $conn->query("SHOW COLUMNS FROM `activities` LIKE 'cert_template'");
     if ($resActTpl && $resActTpl->num_rows === 0) {
         $conn->query("ALTER TABLE `activities` ADD COLUMN `cert_template` VARCHAR(255) DEFAULT NULL");
+    }
+
+    // Pastikan tabel activities memiliki kolom attendance_file untuk bukti absensi resmi dari HC
+    $resActAtt = $conn->query("SHOW COLUMNS FROM `activities` LIKE 'attendance_file'");
+    if ($resActAtt && $resActAtt->num_rows === 0) {
+        $conn->query("ALTER TABLE `activities` ADD COLUMN `attendance_file` VARCHAR(255) DEFAULT NULL");
     }
 }
 
@@ -173,17 +185,20 @@ function _auto_init_tables_if_needed(mysqli $conn): void {
           `email` VARCHAR(100) DEFAULT NULL,
           `phone` VARCHAR(50) DEFAULT NULL,
           `avatar_color` VARCHAR(20) DEFAULT '#0f766e',
+          `avatar_image` VARCHAR(255) DEFAULT NULL,
           `bio` TEXT DEFAULT NULL,
           `reminder_freq` VARCHAR(50) DEFAULT '24 Jam',
           `wa_notif` TINYINT(1) NOT NULL DEFAULT 1,
+          `otp_code` VARCHAR(20) DEFAULT NULL,
+          `otp_expires_at` DATETIME DEFAULT NULL,
           `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (`username`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $conn->query("INSERT IGNORE INTO `users` (`username`, `password`, `user_id`, `nrp`, `name`, `role`, `type`, `dept`, `email`, `phone`, `avatar_color`, `bio`, `reminder_freq`, `wa_notif`) VALUES
-        ('egy', 'password123', 'EP', 'ANTAM-08912', 'Egy Pratama', 'Operasional Tambang', 'User', 'Mining Operations Underground', 'egy.pratama@antam.com', '0812-3456-7890', '#d4af37', 'Operator Tambang Bawah Tanah Site Pongkor. Fokus pada pemenuhan K3 dan standar operasional ESDM.', '24 Jam', 1),
+        ('egy', 'password123', 'EP', 'ANTAM-08912', 'Egy Pratama', 'Operasional Tambang', 'User', 'Mining Operations Underground', 'egy.pratama@antam.com', '0812-3456-7890', '#d4af37', 'Operator Tambang Bawah Tanah Site Pomalaa. Fokus pada pemenuhan K3 dan standar operasional ESDM.', '24 Jam', 1),
         ('budi', 'password123', 'BS', 'ANTAM-07844', 'Budi Santoso', 'Processing Plant', 'User', 'Plant & Smelter', 'budi.santoso@antam.com', '0813-9876-5432', '#38bdf8', 'Teknisi Pengolahan Emas & Logam Mulia. Pengawas K3 Pabrik.', '12 Jam', 1),
-        ('andi', 'password123', 'AW', 'ANTAM-06519', 'Andi Wijaya', 'Logistik & Gudang', 'User', 'Supply Chain & Bahan Peledak', 'andi.wijaya@antam.com', '0811-2233-4455', '#a855f7', 'Koordinator Pergudangan dan Distribusi Handak Site Pongkor.', '24 Jam', 0),
+        ('andi', 'password123', 'AW', 'ANTAM-06519', 'Andi Wijaya', 'Logistik & Gudang', 'User', 'Supply Chain & Bahan Peledak', 'andi.wijaya@antam.com', '0811-2233-4455', '#a855f7', 'Koordinator Pergudangan dan Distribusi Handak Site Pomalaa.', '24 Jam', 0),
         ('admin', 'admin123', 'LO', 'ANTAM-HC001', 'Learning Ops Admin', 'Learning & Development', 'Admin', 'Human Capital & Corporate University', 'admin.lnd@antam.com', '0811-9988-7766', '#10b981', 'Super Administrator Sistem Pembelajaran & Evaluasi Kepatuhan K3 Terintegrasi PT ANTAM Tbk.', 'Realtime', 1)");
     }
 
@@ -207,6 +222,7 @@ function _auto_init_tables_if_needed(mysqli $conn): void {
           `admin_notes` TEXT DEFAULT NULL,
           `last_report` TEXT DEFAULT NULL,
           `last_attachment` VARCHAR(255) DEFAULT NULL,
+          `attendance_file` VARCHAR(255) DEFAULT NULL,
           `last_submitted_at` DATETIME DEFAULT NULL,
           `grade` INT DEFAULT NULL,
           `admin_feedback` TEXT DEFAULT NULL,
@@ -219,7 +235,7 @@ function _auto_init_tables_if_needed(mysqli $conn): void {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $conn->query("INSERT IGNORE INTO `activities` (`id`, `user_username`, `user_name`, `title`, `type`, `category`, `duration`, `level`, `deadline`, `status`, `progress`, `current_module`, `total_modules`, `completed_modules`, `notes`, `created_at`, `approved_at`) VALUES
-        ('act_1', 'egy', 'Egy Pratama', 'Safety Induction Site Tambang Pongkor', 'Wajib K3', 'Keselamatan Kerja', '1 Hari (8 Jam)', 'Basic', '12 Agu 2026', 'disetujui', 60, 'Modul 4: Penanganan Bahaya Longsor & Rock Burst', 5, 3, 'Pelatihan wajib kepatuhan ESDM sebelum memasuki terowongan utama.', '2026-08-01 08:00:00', '2026-08-01 09:00:00'),
+        ('act_1', 'egy', 'Egy Pratama', 'Safety Induction Site Pomalaa', 'Wajib K3', 'Keselamatan Kerja', '1 Hari (8 Jam)', 'Basic', '12 Agu 2026', 'disetujui', 60, 'Modul 4: Penanganan Bahaya Longsor & Rock Burst', 5, 3, 'Pelatihan wajib kepatuhan ESDM sebelum memasuki terowongan utama.', '2026-08-01 08:00:00', '2026-08-01 09:00:00'),
         ('act_2', 'egy', 'Egy Pratama', 'POP Level 1 — Pengawas Operasional Pertama', 'Wajib ESDM', 'Regulasi ESDM', '3 Hari (24 Jam)', 'Basic', '14 Agu 2026', 'disetujui', 30, 'Unit 3: Pelaksanaan Inspeksi & Identifikasi Bahaya', 6, 2, 'Sertifikasi pengawas operasional lapangan wajib perpanjangan.', '2026-08-05 10:00:00', '2026-08-05 11:30:00'),
         ('act_3', 'budi', 'Budi Santoso', 'Sertifikasi K3 Umum & Pertambangan', 'Sertifikasi', 'K3 Nasional', '5 Hari (40 Jam)', 'Advanced', '17 Agu 2026', 'disetujui', 94, 'Selesai - Menunggu Penerbitan Lisensi Resmi', 5, 5, 'Lulus ujian kuis online dengan nilai 94/100.', '2026-08-02 09:00:00', '2026-08-02 10:00:00')");
     }
@@ -263,7 +279,7 @@ function _auto_init_tables_if_needed(mysqli $conn): void {
 
         $conn->query("INSERT IGNORE INTO `lna_catalog` (`id`, `title`, `code`, `category`, `type`, `duration`, `level`, `gap_score`, `target_role`, `competency_area`, `description`, `prerequisites`) VALUES
         ('lna_1', 'POP Level 1 — Pengawas Operasional Pertama', 'ESDM-POP-01', 'Kepatuhan ESDM', 'Wajib', '3 Hari (24 Jam)', 'Basic', 'Gap Tinggi (Prioritas 1)', 'Semua Foreman & Pengawas Tambang', 'Regulasi ESDM No. 1827', 'Standar kompetensi pengawas operasional pertambangan mineral dan batubara. Membekali pengawas dalam inspeksi bahaya bawah tanah, K3, dan kepatuhan hukum.', 'Pengalaman minimal 1 tahun di site'),
-        ('lna_2', 'Safety Induction Site Tambang Pongkor', 'ANTAM-SAF-02', 'K3 & Keselamatan', 'Wajib', '1 Hari (8 Jam)', 'Basic', 'Kritis (Izin Masuk Site)', 'Seluruh Pegawai Site', 'Protokol Underground K3', 'Pengenalan komprehensif bahaya bawah tanah, prosedur evakuasi darurat, deteksi gas metana/CO, penggunaan respirator SCSR, dan standar kelayakan APD.', 'Medical Check Up Fit to Work'),
+        ('lna_2', 'Safety Induction Site Pomalaa', 'ANTAM-SAF-02', 'K3 & Keselamatan', 'Wajib', '1 Hari (8 Jam)', 'Basic', 'Kritis (Izin Masuk Site)', 'Seluruh Pegawai Site', 'Protokol Underground K3', 'Pengenalan komprehensif bahaya bawah tanah, prosedur evakuasi darurat, deteksi gas metana/CO, penggunaan respirator SCSR, dan standar kelayakan APD.', 'Medical Check Up Fit to Work'),
         ('lna_3', 'Sertifikasi K3 Umum & Pertambangan', 'KEMNAKER-K3U-03', 'Sertifikasi Nasional', 'Sertifikasi', '5 Hari (40 Jam)', 'Advanced', 'Gap Sedang (Lisensi)', 'Officer, Supervisor & K3 Team', 'Manajemen Risiko K3 Korporat', 'Program sertifikasi lisensi resmi pemenuhan syarat regulasi Kemnaker & ESDM. Dilengkapi uji materi hukum K3, inspeksi praktis, dan investigasi insiden.', 'Pendidikan min. D3 / S1 dengan pengalaman'),
         ('lna_4', 'Technical Skill A — Heavy Hauling 777D', 'TECH-OPR-04', 'Teknik Operasional', 'Wajib', '4 Hari (32 Jam)', 'Advanced', 'Gap Spesialis (Hauling)', 'Operator Alat Berat & Hauler', 'Operasional Alat Tambang', 'Manuver tanjakan ekstrem, inspeksi rem retarder hidrolik, penanganan blindspot, dan keselamatan loading point di pit tambang.', 'SIM B2 Umum & SIO Alat Berat'),
         ('lna_5', 'Leadership & Supervisory Underground', 'LD-SUP-05', 'Leadership & Manajemen', 'Optional', '2 Hari (16 Jam)', 'Intermediate', 'Pengembangan Mandiri', 'Team Leader & Asisten Foreman', 'Manajemen Regu Kerja', 'Pembekalan kepemimpinan regu kerja di terowongan bawah tanah, komunikasi radio darurat, manajemen konflik shif, dan coaching keselamatan berkala.', 'Pengalaman memimpin minimal 6 bulan'),
@@ -305,10 +321,10 @@ function _auto_init_tables_if_needed(mysqli $conn): void {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $conn->query("INSERT IGNORE INTO `notifications` (`id`, `user_target`, `type`, `title`, `message`, `related_user`, `related_course`, `activity_id`, `status`, `created_at`) VALUES
-        ('notif_1', 'admin', 'escalation', 'Eskalasi Level 1: Egy Pratama', 'Safety Induction Overdue (+1 Hari). Izin masuk site underground terancam dibekukan.', 'Egy Pratama', 'Safety Induction Site Tambang Pongkor', NULL, 'unread', '2026-08-12 08:30:00'),
+        ('notif_1', 'admin', 'escalation', 'Eskalasi Level 1: Egy Pratama', 'Safety Induction Overdue (+1 Hari). Izin masuk site underground terancam dibekukan.', 'Egy Pratama', 'Safety Induction Site Pomalaa', NULL, 'unread', '2026-08-12 08:30:00'),
         ('notif_2', 'admin', 'verification', 'Verifikasi Ujian: Budi Santoso', 'Budi Santoso menyelesaikan evaluasi Sertifikasi K3 Umum dengan skor 94/100.', 'Budi Santoso', 'Sertifikasi K3 Umum & Pertambangan', NULL, 'unread', '2026-08-11 16:45:00'),
         ('notif_3', 'admin', 'request', 'Pengajuan Modul: Andi Wijaya', 'Andi Wijaya mengajukan penugasan modul Technical Skill A (Hauling Truck 777D).', 'Andi Wijaya', 'Technical Skill A — Heavy Hauling 777D', NULL, 'unread', '2026-08-10 11:20:00'),
-        ('notif_4', 'egy', 'approval', 'Kegiatan Dikonfirmasi: Safety Induction Site Tambang Pongkor', 'Admin telah menyetujui kegiatan Safety Induction Site Tambang Pongkor. Silakan lanjutkan modul pembelajaran.', 'Learning Ops Admin', 'Safety Induction Site Tambang Pongkor', 'act_1', 'unread', '2026-08-01 09:00:00')");
+        ('notif_4', 'egy', 'approval', 'Kegiatan Dikonfirmasi: Safety Induction Site Pomalaa', 'Admin telah menyetujui kegiatan Safety Induction Site Pomalaa. Silakan lanjutkan modul pembelajaran.', 'Learning Ops Admin', 'Safety Induction Site Pomalaa', 'act_1', 'unread', '2026-08-01 09:00:00')");
     }
 }
 

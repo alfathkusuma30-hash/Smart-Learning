@@ -173,15 +173,37 @@ $completionRate = ($totalModules > 0) ? round(($completedModules / $totalModules
                     <?php endif; ?>
                 </div>
                 <?php else: ?>
-                <div style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:8px; margin: 0.85rem 0; padding: 0.75rem 1rem; display:flex; align-items:center; gap:0.75rem;">
-                    <i class="ph-fill ph-medal text-accent" style="font-size:1.4rem; flex-shrink:0;"></i>
-                    <div style="font-size:0.785rem; color:#115e59; line-height:1.4;">
-                        <strong>Jaminan Sertifikat Resmi:</strong> Anda terdaftar dalam kegiatan ini. Setelah menyelesaikan materi / kehadiran, klik tombol di bawah untuk langsung menerbitkan E-Sertifikat resmi kelulusan Anda.
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; margin: 0.85rem 0; padding: 0.75rem 1rem; display:flex; align-items:center; gap:0.75rem;">
+                    <i class="ph-fill ph-clipboard-text text-accent" style="font-size:1.4rem; flex-shrink:0;"></i>
+                    <div style="font-size:0.785rem; color:#334155; line-height:1.4;">
+                        <strong>Status Keikutsertaan:</strong> Terdaftar dalam kegiatan. Kelulusan dan arsip resmi diverifikasi melalui <strong>Berkas Absensi Resmi HC PT ANTAM</strong> saat kegiatan dikonfirmasi selesai.
                     </div>
                 </div>
                 <?php endif; ?>
 
-                <?php if (!empty($act['last_attachment'])): ?>
+                <?php 
+                $attFile = !empty($act['attendance_file']) ? $act['attendance_file'] : (!empty($act['last_attachment']) && (strpos($act['last_attachment'], 'absen') !== false) ? $act['last_attachment'] : null);
+                ?>
+
+                <?php if ($attFile): ?>
+                <div class="activity-attendance-badge" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; margin: 0.6rem 0 0.85rem; padding: 0.6rem 0.85rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.775rem; flex-wrap:wrap; gap:0.5rem;">
+                    <div class="flex items-center gap-2" style="color: #166534; font-weight: 600;">
+                        <i class="ph-fill ph-file-check" style="font-size:1.35rem; color:#0f766e;"></i>
+                        <div>
+                            <span style="font-size:0.68rem; color:#64748b; text-transform:uppercase; font-weight:700; display:block;">Berkas Absensi Pelatihan (HC ANTAM)</span>
+                            <span class="font-mono text-xs" style="color:#0f766e;"><?php echo htmlspecialchars($attFile); ?></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="uploads/attendance/<?php echo htmlspecialchars($attFile); ?>" target="_blank" class="tag tag-teal font-mono" style="text-decoration:none; padding:4px 10px; font-weight:700; font-size:0.75rem;" title="Lihat dan unduh file absensi resmi kegiatan ini">
+                            <i class="ph-bold ph-eye"></i> Lihat Absensi
+                        </a>
+                        <button type="button" class="btn-outline text-xs" style="padding:3px 8px; font-size:0.72rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')">
+                            <i class="ph-bold ph-upload-simple"></i> Update Berkas
+                        </button>
+                    </div>
+                </div>
+                <?php elseif (!empty($act['last_attachment'])): ?>
                 <div class="last-submission-badge" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; margin: 0.5rem 0 0.85rem; padding: 0.45rem 0.75rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.775rem;">
                     <div class="flex items-center gap-2" style="color: #334155; font-weight: 500;">
                         <i class="ph-fill ph-file-doc" style="font-size:1.1rem; color:#0f766e;"></i>
@@ -191,46 +213,37 @@ $completionRate = ($totalModules > 0) ? round(($completedModules / $totalModules
                 </div>
                 <?php endif; ?>
 
-                <?php if (!empty($act['cert_template'])): ?>
-                <div class="template-badge" style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; margin: 0.35rem 0 0.6rem; padding: 0.35rem 0.65rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color:#854d0e;">
-                    <div class="flex items-center gap-2">
-                        <i class="ph-fill ph-file-image" style="color:#d97706; font-size:1.1rem;"></i>
-                        <span>Template Sertifikat: <strong><?php echo htmlspecialchars($act['cert_template']); ?></strong></span>
-                    </div>
-                    <span class="tag tag-amber text-xs" style="font-size:0.68rem; padding:2px 6px;">Kustom</span>
-                </div>
-                <?php endif; ?>
-
                 <!-- Tombol Aksi Sederhana & Selesaikan Kegiatan -->
                 <div class="card-actions-row">
                     <?php if ($isDone): ?>
-                    <button class="btn-dark" style="background:#0f766e; border-color:#0f766e; width: 100%;" onclick="openCertViewer(
-                        '<?php echo addslashes($act['title']); ?>',
-                        '<?php echo addslashes($certInfo['reg_no'] ?? ('ANTAM/K3U/' . date('Y') . '/' . rand(1000, 9999))); ?>',
-                        '<?php echo $act['grade'] ?? 100; ?>',
-                        '<?php echo date('d M Y', strtotime($act['last_submitted_at'] ?? 'now')); ?>',
-                        '<?php echo date('d M Y', strtotime('+3 years', strtotime($act['last_submitted_at'] ?? 'now'))); ?>',
-                        '<?php echo addslashes($user['name']); ?>',
-                        '<?php echo addslashes($act['cert_template'] ?? ''); ?>'
-                    )">
-                        <i class="ph-fill ph-certificate"></i> Lihat &amp; Cetak E-Sertifikat
-                    </button>
+                        <?php if ($certInfo): ?>
+                        <button class="btn-dark" style="background:#0f766e; border-color:#0f766e; flex:1;" onclick="openCertViewer(
+                            '<?php echo addslashes($act['title']); ?>',
+                            '<?php echo addslashes($certInfo['reg_no']); ?>',
+                            '<?php echo $act['grade'] ?? 100; ?>',
+                            '<?php echo date('d M Y', strtotime($act['last_submitted_at'] ?? 'now')); ?>',
+                            '<?php echo date('d M Y', strtotime('+3 years', strtotime($act['last_submitted_at'] ?? 'now'))); ?>',
+                            '<?php echo addslashes($act['user_name'] ?? $user_name); ?>',
+                            ''
+                        )">
+                            <i class="ph-fill ph-certificate"></i> Lihat E-Sertifikat
+                        </button>
+                        <?php endif; ?>
+                        <?php if ($attFile): ?>
+                        <a href="uploads/attendance/<?php echo htmlspecialchars($attFile); ?>" target="_blank" class="btn-outline" style="text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; justify-content:center; flex:1;" title="Biro / Admin / Pegawai dapat melihat file absensi kegiatan">
+                            <i class="ph-bold ph-eye"></i> Lihat File Absensi
+                        </a>
+                        <?php else: ?>
+                        <button class="btn-dark" style="background:#0f766e; border-color:#0f766e; flex:1;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')">
+                            <i class="ph-bold ph-upload-simple"></i> Upload File Absensi (HC)
+                        </button>
+                        <?php endif; ?>
                     <?php else: ?>
-                    <button class="btn-dark" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', '<?php echo addslashes($act['cert_template'] ?? ''); ?>')">
-                        <i class="ph-fill ph-clipboard-text"></i> Selesaikan &amp; Upload Absensi
-                    </button>
-                    <button class="btn-outline" onclick="handleClaimCertificate('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', this)" title="Klaim Mandiri Langsung">
-                        <i class="ph-fill ph-seal-check"></i> Klaim Mandiri
+                    <button class="btn-dark" style="width:100%;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')">
+                        <i class="ph-fill ph-clipboard-text"></i> Konfirmasi Selesai &amp; Upload Absensi (HC)
                     </button>
                     <?php endif; ?>
                 </div>
-                <?php if (!$isDone): ?>
-                <div class="mt-2 text-center">
-                    <button type="button" class="btn-outline text-xs w-full" style="border-style:dashed; color:#0f766e; font-size:0.75rem; padding:0.45rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', '<?php echo addslashes($act['cert_template'] ?? ''); ?>')">
-                        <i class="ph-fill ph-users-three"></i> Terbitkan Sertifikat Otomatis dari Daftar Hadir Karyawan
-                    </button>
-                </div>
-                <?php endif; ?>
             </div>
             <?php endforeach; ?>
         </div>
@@ -265,12 +278,7 @@ $completionRate = ($totalModules > 0) ? round(($completedModules / $totalModules
                     <div><strong>Kategori:</strong> <?php echo htmlspecialchars($pAct['category']); ?></div>
                     <div><strong>Tipe:</strong> <?php echo htmlspecialchars($pAct['type']); ?></div>
                     <div><strong>Estimasi Durasi:</strong> <?php echo htmlspecialchars($pAct['duration']); ?></div>
-                    <div><strong>Target Penyelesaian:</strong> <?php echo htmlspecialchars($pAct['deadline']); ?></div>
-                    <?php if (!empty($pAct['cert_template'])): ?>
-                    <div style="grid-column: span 2;"><strong>Template Sertifikat:</strong> <span class="tag tag-teal text-xs font-mono"><i class="ph-fill ph-image"></i> <?php echo htmlspecialchars($pAct['cert_template']); ?></span></div>
-                    <?php else: ?>
-                    <div style="grid-column: span 2;"><strong>Template Sertifikat:</strong> <span class="tag tag-amber text-xs font-mono"><i class="ph-fill ph-medal"></i> Standar Resmi PT ANTAM Gold</span></div>
-                    <?php endif; ?>
+                    <div style="grid-column: span 2;"><strong>Verifikasi Kelulusan:</strong> <span class="tag tag-teal text-xs font-mono"><i class="ph-fill ph-clipboard-text"></i> Berkas Absensi Resmi Diunggah oleh HC saat Selesai</span></div>
                 </div>
 
                 <p class="text-sm text-muted bg-gray-50 p-3 rounded-md border" style="background:#f8fafc; border: 1px solid #e2e8f0;">
@@ -433,7 +441,7 @@ $completionRate = ($totalModules > 0) ? round(($completedModules / $totalModules
     </div>
 </div>
 
-<!-- Switcher for sub-tabs -->
+<!-- Switcher for sub-tabs & Auto-open from Calendar -->
 <script>
 function switchCourseTab(btn, tabId) {
     document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
@@ -450,4 +458,42 @@ function switchCourseTab(btn, tabId) {
         activePanel.classList.add('active');
     }
 }
+
+// Deteksi jika diarahkan dari klik tanggal kalender (?add_date=YYYY-MM-DD)
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const addDate = urlParams.get('add_date');
+    if (addDate) {
+        let formattedDeadline = addDate;
+        const parts = addDate.split('-');
+        if (parts.length === 3) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const d = parseInt(parts[2], 10);
+            const m = parseInt(parts[1], 10) - 1;
+            const y = parts[0];
+            formattedDeadline = `${d} ${months[m] || ''} ${y}`;
+        }
+
+        setTimeout(() => {
+            if (typeof openNewActivityModal === 'function') {
+                openNewActivityModal();
+                if (window.newActWizard) {
+                    window.newActWizard.deadline = formattedDeadline;
+                    window.newActWizard.notes = `Rencana kegiatan pembelajaran Site Pomalaa: ${formattedDeadline}.`;
+                }
+                const deadlineInput = document.getElementById('wiz-act-deadline');
+                if (deadlineInput) {
+                    deadlineInput.value = formattedDeadline;
+                }
+                const notesInput = document.getElementById('wiz-act-notes');
+                if (notesInput) {
+                    notesInput.value = `Rencana kegiatan pembelajaran Site Pomalaa: ${formattedDeadline}.`;
+                }
+                if (typeof showToast === 'function') {
+                    showToast(`🗓️ Formulir pengajuan kegiatan dibuka untuk tanggal: ${formattedDeadline}`, 'info');
+                }
+            }
+        }, 300);
+    }
+});
 </script>

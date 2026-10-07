@@ -32,7 +32,7 @@ $lnaList = get_lna_catalog();
         <div>
             <div class="flex items-center gap-2">
                 <h1 class="page-title"><?php echo $user_type === 'Admin' ? 'Executive Dashboard Monitoring' : 'Personal Dashboard'; ?></h1>
-                <span class="badge-role-tag"><?php echo strtoupper($user_type); ?> · SITE PONGKOR</span>
+                <span class="badge-role-tag"><?php echo strtoupper($user_type); ?> · SITE POMALAA</span>
             </div>
         </div>
         <div class="page-top-actions">
@@ -51,9 +51,9 @@ $lnaList = get_lna_catalog();
                     <span>+ Ajukan Kegiatan Baru</span>
                 </button>
             <?php endif; ?>
-            <span class="status-chip-live">
+            <span class="status-chip-live" title="Waktu Nyata Sistem (Real-Time)">
                 <span class="live-dot"></span>
-                <span>Normal · Online</span>
+                <span id="dash-realtime-clock" class="font-mono" style="font-size: 0.78rem; font-weight: 600;"><?php echo get_realtime_indonesian_date('day_short') . ' · ' . date('H:i:s') . ' WITA'; ?></span>
             </span>
         </div>
     </div>
@@ -63,7 +63,7 @@ $lnaList = get_lna_catalog();
         <?php if ($user_type === 'Admin'): ?>
             <!-- Admin Stat 1: Kepatuhan Site -->
             <div class="stat-card">
-                <div class="stat-card-title">KEPATUHAN K3 SITE PONGKOR</div>
+                <div class="stat-card-title">KEPATUHAN K3 SITE POMALAA</div>
                 <div class="stat-value text-accent">81.3%</div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" style="width: 81.3%; background: #10b981;"></div>
@@ -97,7 +97,7 @@ $lnaList = get_lna_catalog();
                 <div class="stat-value text-sky"><?php echo count($allApproved); ?></div>
                 <div class="flex items-center gap-2 mt-2">
                     <span class="status-badge status-success text-xs">
-                        <i class="ph-fill ph-users"></i> Dipantau Realtime Site Pongkor
+                        <i class="ph-fill ph-users"></i> Dipantau Realtime Site Pomalaa
                     </span>
                 </div>
             </div>
@@ -252,9 +252,14 @@ $lnaList = get_lna_catalog();
                                 $parts = explode(' ', $act['user_name'] ?? '');
                                 foreach ($parts as $p) { $initials .= substr($p, 0, 1); }
                                 $initials = strtoupper(substr($initials, 0, 2));
+                                $actUser = get_user_by_username($act['user_username'] ?? '');
                                 ?>
-                                <div class="mini-avatar" style="background: <?php echo $avatar_color; ?>; width: 30px; height: 30px; font-size: 0.75rem;">
-                                    <?php echo $initials ?: 'U'; ?>
+                                <div class="mini-avatar" style="background: <?php echo $avatar_color; ?>; width: 30px; height: 30px; font-size: 0.75rem; overflow: hidden; padding: 0;">
+                                    <?php if ($actUser && !empty($actUser['avatar_image']) && file_exists(__DIR__ . '/../uploads/avatars/' . $actUser['avatar_image'])): ?>
+                                        <img src="uploads/avatars/<?php echo htmlspecialchars($actUser['avatar_image']); ?>" alt="Foto" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%;">
+                                    <?php else: ?>
+                                        <?php echo $initials ?: 'U'; ?>
+                                    <?php endif; ?>
                                 </div>
                                 <div>
                                     <div class="font-semibold text-sm"><?php echo htmlspecialchars($act['user_name']); ?></div>
@@ -355,6 +360,21 @@ $lnaList = get_lna_catalog();
                             <div class="progress-bar" style="width: <?php echo $activity['progress']; ?>%;"></div>
                         </div>
                     </div>
+
+                    <?php 
+                    $attFileDash = !empty($activity['attendance_file']) ? $activity['attendance_file'] : (!empty($activity['last_attachment']) && (strpos($activity['last_attachment'], 'absen') !== false) ? $activity['last_attachment'] : null);
+                    if ($attFileDash):
+                    ?>
+                    <div class="mt-2.5 p-2 rounded text-xs flex items-center justify-between" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;">
+                        <div class="flex items-center gap-1.5 font-semibold">
+                            <i class="ph-fill ph-file-check" style="font-size:1.15rem; color:#0f766e;"></i>
+                            <span>Berkas Absensi HC: <strong class="font-mono text-xs"><?php echo htmlspecialchars($attFileDash); ?></strong></span>
+                        </div>
+                        <a href="uploads/attendance/<?php echo htmlspecialchars($attFileDash); ?>" target="_blank" class="tag tag-teal text-xs" style="text-decoration:none; padding:2px 8px; font-weight:700;">
+                            <i class="ph-bold ph-eye"></i> Lihat Absensi
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="activity-card-footer">
@@ -519,15 +539,15 @@ $lnaList = get_lna_catalog();
                     <span><?php echo htmlspecialchars($lna['category']); ?></span>
                 </div>
                 <div class="lna-icon-actions">
-                    <button class="btn-card-icon btn-outline" title="Lihat Silabus Lengkap" onclick="openCourseDetailModal('<?php echo addslashes($lna['title']); ?>', '<?php echo $lna['type']; ?>', '<?php echo $lna['duration']; ?>', '<?php echo $lna['level']; ?>', '<?php echo addslashes($lna['desc']); ?>')">
+                    <button class="btn-card-icon btn-outline" title="Lihat Silabus Lengkap" onclick="openCourseDetailModal(<?php echo htmlspecialchars(json_encode($lna['title']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['type']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['duration']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['level']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['desc']), ENT_QUOTES, 'UTF-8'); ?>)">
                         <i class="ph-bold ph-info"></i>
                     </button>
                     <?php if ($user_type === 'Admin'): ?>
-                    <button class="btn-card-icon btn-dark" title="Tugaskan Modul ke Pegawai" onclick="openAssignTrainingModal('<?php echo addslashes($lna['title']); ?>')">
+                    <button class="btn-card-icon btn-dark" title="Tugaskan Modul ke Pegawai" onclick="openAssignTrainingModal(<?php echo htmlspecialchars(json_encode($lna['title']), ENT_QUOTES, 'UTF-8'); ?>)">
                         <i class="ph-bold ph-user-plus"></i>
                     </button>
                     <?php else: ?>
-                    <button class="btn-card-icon btn-dark" title="Ajukan Kegiatan Ini" onclick="openNewActivityModalWithPreset('<?php echo addslashes($lna['title']); ?>', '<?php echo $lna['type']; ?>', '<?php echo $lna['category']; ?>', '<?php echo $lna['duration']; ?>', '<?php echo $lna['level']; ?>')">
+                    <button class="btn-card-icon btn-dark" title="Ajukan Kegiatan Ini" onclick="openNewActivityModalWithPreset(<?php echo htmlspecialchars(json_encode($lna['title']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['type']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['category']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['duration']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($lna['level']), ENT_QUOTES, 'UTF-8'); ?>)">
                         <i class="ph-bold ph-plus"></i>
                     </button>
                     <?php endif; ?>
