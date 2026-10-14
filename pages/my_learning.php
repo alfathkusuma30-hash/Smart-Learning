@@ -198,7 +198,7 @@ $completionRate = ($totalModules > 0) ? round(($completedModules / $totalModules
                         <a href="uploads/attendance/<?php echo htmlspecialchars($attFile); ?>" target="_blank" class="tag tag-teal font-mono" style="text-decoration:none; padding:4px 10px; font-weight:700; font-size:0.75rem;" title="Lihat dan unduh file absensi resmi kegiatan ini">
                             <i class="ph-bold ph-eye"></i> Lihat Absensi
                         </a>
-                        <button type="button" class="btn-outline text-xs" style="padding:3px 8px; font-size:0.72rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')">
+                        <button type="button" class="btn-outline text-xs" style="padding:3px 8px; font-size:0.72rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', '<?php echo addslashes($act['user_username'] ?? ''); ?>', '<?php echo addslashes($act['user_name'] ?? ''); ?>')">
                             <i class="ph-bold ph-upload-simple"></i> Update Berkas
                         </button>
                     </div>
@@ -234,12 +234,12 @@ $completionRate = ($totalModules > 0) ? round(($completedModules / $totalModules
                             <i class="ph-bold ph-eye"></i> Lihat File Absensi
                         </a>
                         <?php else: ?>
-                        <button class="btn-dark" style="background:#0f766e; border-color:#0f766e; flex:1;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')">
+                        <button class="btn-dark" style="background:#0f766e; border-color:#0f766e; flex:1;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', '<?php echo addslashes($act['user_username'] ?? ''); ?>', '<?php echo addslashes($act['user_name'] ?? ''); ?>')">
                             <i class="ph-bold ph-upload-simple"></i> Upload File Absensi (HC)
                         </button>
                         <?php endif; ?>
                     <?php else: ?>
-                    <button class="btn-dark" style="width:100%;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')">
+                    <button class="btn-dark" style="width:100%;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', '<?php echo addslashes($act['user_username'] ?? ''); ?>', '<?php echo addslashes($act['user_name'] ?? ''); ?>')">
                         <i class="ph-fill ph-clipboard-text"></i> Konfirmasi Selesai &amp; Upload Absensi (HC)
                     </button>
                     <?php endif; ?>

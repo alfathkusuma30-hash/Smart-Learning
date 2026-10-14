@@ -88,9 +88,14 @@ switch ($action) {
             exit();
         }
 
-        $targetUsername = isset($_POST['target_username']) ? strtolower(trim($_POST['target_username'])) : 'egy';
+        $targetUsername = isset($_POST['target_username']) ? strtolower(trim($_POST['target_username'])) : '';
         $title = isset($_POST['title']) ? trim($_POST['title']) : 'Pelatihan Baru';
         $deadline = isset($_POST['deadline']) ? trim($_POST['deadline']) : '14 Hari';
+
+        if (empty($targetUsername)) {
+            echo json_encode(['success' => false, 'message' => 'Silakan pilih target pegawai yang valid.']);
+            exit();
+        }
 
         if ($targetUsername === 'all' || $targetUsername === 'semua') {
             $allUsers = get_all_users();
@@ -377,6 +382,23 @@ switch ($action) {
         $activityId = isset($_POST['activity_id']) ? trim($_POST['activity_id']) : '';
         if (empty($activityId)) {
             echo json_encode(['success' => false, 'message' => 'ID kegiatan tidak valid.']);
+            exit();
+        }
+
+        // Validasi kepemilikan kegiatan & hak akses
+        $targetAct = get_activities_by_id($activityId);
+        if (!$targetAct) {
+            echo json_encode(['success' => false, 'message' => 'Data kegiatan tidak ditemukan.']);
+            exit();
+        }
+
+        // Hanya pemilik kegiatan atau Admin yang berhak mengonfirmasi / upload absensi kegiatan ini
+        if ($userType !== 'Admin' && strtolower($targetAct['user_username'] ?? '') !== strtolower($currentUser)) {
+            $ownerName = $targetAct['user_name'] ?? $targetAct['user_username'];
+            echo json_encode([
+                'success' => false,
+                'message' => "Akses Ditolak: Anda tidak memiliki izin untuk mengonfirmasi atau mengunggah absensi kegiatan milik pegawai lain ({$ownerName}). Setiap pegawai hanya memiliki hak atas kegiatannya sendiri."
+            ]);
             exit();
         }
 

@@ -37,9 +37,15 @@ $avatarColor = !empty($user['avatar_color']) ? $user['avatar_color'] : '#0f766e'
         </div>
     </div>
 
-    <!-- User Mini Profile Banner -->
+    <!-- User Mini Profile Banner (With Security & Mining Watermark Artwork) -->
     <div class="settings-profile-banner glass-panel mb-6">
-        <div class="flex items-center gap-4 flex-wrap">
+        <!-- Silhouette / Watermark Artwork (Personnel Security & Mining Identity) -->
+        <div class="settings-banner-watermark" aria-hidden="true">
+            <div class="settings-banner-watermark-glow"></div>
+            <div class="settings-banner-watermark-img"></div>
+        </div>
+
+        <div class="settings-banner-left">
             <div class="settings-avatar-wrapper" onclick="document.getElementById('settings-avatar-input').click()" title="Klik untuk langsung mengganti foto profil">
                 <div class="settings-avatar-preview settings-avatar-interactive" id="settings-avatar-circle" style="background: <?php echo htmlspecialchars($avatarColor); ?>; overflow: hidden; padding: 0;">
                     <?php if (!empty($user['avatar_image']) && file_exists(__DIR__ . '/../uploads/avatars/' . $user['avatar_image'])): ?>
@@ -57,14 +63,32 @@ $avatarColor = !empty($user['avatar_color']) ? $user['avatar_color'] : '#0f766e'
             </div>
             <!-- Input Berkas Foto Tersembunyi (Langsung terbuka saat avatar ditekan) -->
             <input type="file" id="settings-avatar-input" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" onchange="handleDirectAvatarUpload(this)">
-            <div>
-                <h2 class="text-xl font-bold" id="banner-user-name"><?php echo htmlspecialchars($user['name'] ?? $username); ?></h2>
-                <div class="flex items-center gap-3 text-xs text-muted mt-1 flex-wrap font-mono">
-                    <span><i class="ph-fill ph-identification-card"></i> NPP: <span id="banner-user-nrp"><?php echo htmlspecialchars($user['nrp'] ?? '-'); ?></span></span>
-                    <span>•</span>
-                    <span><i class="ph-fill ph-hard-hat"></i> <span id="banner-user-role"><?php echo htmlspecialchars($user['role'] ?? 'Operasional Tambang'); ?></span></span>
-                    <span>•</span>
-                    <span><i class="ph-fill ph-buildings"></i> <span id="banner-user-dept"><?php echo htmlspecialchars($user['dept'] ?? 'PT ANTAM Tbk'); ?></span></span>
+            
+            <div class="settings-user-info-block">
+                <div class="settings-banner-tag">
+                    <i class="ph-fill ph-shield-check text-accent"></i>
+                    <span>IDENTITAS RESMI PERSONEL &bull; SITE POMALAA</span>
+                </div>
+                <h2 class="settings-banner-name" id="banner-user-name"><?php echo htmlspecialchars($user['name'] ?? $username); ?></h2>
+                <div class="settings-badges-row font-mono">
+                    <span class="settings-badge"><i class="ph-fill ph-identification-card"></i> NPP: <strong id="banner-user-nrp"><?php echo htmlspecialchars($user['nrp'] ?? '-'); ?></strong></span>
+                    <span class="settings-badge"><i class="ph-fill ph-hard-hat"></i> <strong id="banner-user-role"><?php echo htmlspecialchars($user['role'] ?? 'Operasional Tambang'); ?></strong></span>
+                    <span class="settings-badge"><i class="ph-fill ph-buildings"></i> <strong id="banner-user-dept"><?php echo htmlspecialchars($user['dept'] ?? 'PT ANTAM Tbk'); ?></strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-banner-right">
+            <div class="settings-security-pill">
+                <div class="sec-pill-icon">
+                    <i class="ph-fill ph-shield-check"></i>
+                </div>
+                <div class="sec-pill-content">
+                    <div class="sec-pill-title">Keamanan Akun K3</div>
+                    <div class="sec-pill-subtitle">
+                        <span class="live-dot"></span>
+                        <span>Terverifikasi &bull; 2FA Aktif</span>
+                    </div>
                 </div>
             </div>
         </div>

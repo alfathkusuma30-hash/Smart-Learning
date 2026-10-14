@@ -1283,8 +1283,16 @@ function complete_activity_with_attendance(string $activityId, array $attendees,
         $stmtUp->close();
     }
 
-    // 2. Jika peserta absensi kosong, tambahkan nama pemilik kegiatan
-    if (empty($attendees)) {
+    // 2. Jika bukan admin yang mengonfirmasi, atau jika daftar peserta kosong, batasi peserta hanya pada pemilik kegiatan
+    $isUserAdmin = false;
+    if (!empty($currentUser)) {
+        $uInfo = get_user_by_username($currentUser);
+        if ($uInfo && ($uInfo['type'] ?? '') === 'Admin') {
+            $isUserAdmin = true;
+        }
+    }
+    if (!$isUserAdmin || empty($attendees)) {
+        // Pegawai biasa hanya menyelesaikan untuk dirinya sendiri
         $attendees = [$act['user_name']];
     }
 

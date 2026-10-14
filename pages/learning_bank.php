@@ -714,13 +714,14 @@ foreach ($allActivities as $act) {
 
     $actDate = _parse_indonesian_date_to_iso($act['deadline'] ?? '') 
                ?: _parse_indonesian_date_to_iso(substr($act['created_at'] ?? '', 0, 10))
-               ?: '2026-08-12';
+               ?: date('Y-m-d');
 
     // Evaluasi status: telah dilaksanakan vs akan terjadi
+    $todayIso = date('Y-m-d');
     $isComplete = ($act['progress'] >= 100) 
                || ($act['completed_modules'] >= ($act['total_modules'] ?? 4))
                || ($act['grade'] !== null)
-               || ($actDate < '2026-08-12' && ($act['status'] ?? '') === 'disetujui');
+               || ($actDate < $todayIso && ($act['status'] ?? '') === 'disetujui');
 
     $statusKey = $isComplete ? 'completed' : 'upcoming';
     $statusLbl = $isComplete ? 'Telah Dilaksanakan' : 'Akan Terjadi';
@@ -738,8 +739,9 @@ foreach ($allActivities as $act) {
             'level' => $act['level'] ?? 'Intermediate',
             'status' => $statusKey,
             'status_label' => $statusLbl,
+            'user_username' => $act['user_username'] ?? '',
             'user_name' => $act['user_name'] ?? 'Pegawai Site Pomalaa',
-            'target' => 'Penugasan Khusus Pegawai',
+            'target' => !empty($act['user_name']) ? 'Pegawai: ' . $act['user_name'] : 'Penugasan Khusus Pegawai',
             'location' => 'PT ANTAM Tbk Pomalaa',
             'instructor' => 'Learning Ops Administrator ANTAM',
             'description' => $act['notes'] ?? 'Kegiatan pembelajaran terdaftar resmi di sistem Smart Learning ANTAM.',
@@ -758,6 +760,19 @@ foreach ($calendarEvents as $ev) {
     }
 }
 sort($categoryList);
+
+// Real-time Waktu Kalender Sistem (Bulan Ini & Hari Ini)
+$realtimeDateObj = new DateTime();
+$realMonthIndex = (int)$realtimeDateObj->format('n'); // 1 - 12
+$realYear = (int)$realtimeDateObj->format('Y');
+$indoMonthsMap = [
+    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+];
+$realMonthNameIndo = $indoMonthsMap[$realMonthIndex] ?? 'Oktober';
+$realMonthNameEng = strtoupper($realtimeDateObj->format('F'));
+$realTodayIso = $realtimeDateObj->format('Y-m-d');
 ?>
 
 <div class="learning-bank-container">
@@ -786,10 +801,14 @@ sort($categoryList);
                 </div>
 
                 <div class="cal-tools-right">
-                    <!-- Search Box Kalender -->
+                    <!-- Search Box Kalender Real-time -->
                     <div class="cal-search-box">
                         <i class="ph-bold ph-magnifying-glass"></i>
-                        <input type="text" id="cal-search-input" class="cal-search-input" placeholder="Cari kegiatan, modul..." onkeyup="filterCalendar()">
+                        <input type="text" id="cal-search-input" class="cal-search-input" placeholder="Cari kegiatan, modul, instruktur..." oninput="handleCalSearchInput(this.value)" onkeydown="handleCalSearchKeydown(event)" onfocus="handleCalSearchFocus()" autocomplete="off">
+                        <button type="button" class="cal-search-clear" id="cal-search-clear" onclick="clearCalSearch()" title="Hapus pencarian">
+                            <i class="ph-bold ph-x"></i>
+                        </button>
+                        <div id="cal-search-dropdown" class="cal-search-dropdown"></div>
                     </div>
 
                     <!-- Dropdown Kategori -->
@@ -822,7 +841,7 @@ sort($categoryList);
                     <button type="button" class="cal-nav-btn" onclick="calChangeMonth(-1)" title="Bulan Sebelumnya">
                         <i class="ph-bold ph-caret-left"></i>
                     </button>
-                    <h3 class="cal-month-title" id="cal-month-display">Agustus 2026</h3>
+                    <h3 class="cal-month-title" id="cal-month-display"><?php echo htmlspecialchars("{$realMonthNameIndo} {$realYear}"); ?></h3>
                     <button type="button" class="cal-nav-btn" onclick="calChangeMonth(1)" title="Bulan Berikutnya">
                         <i class="ph-bold ph-caret-right"></i>
                     </button>
@@ -856,22 +875,14 @@ sort($categoryList);
 
                     <!-- Hidden helper select elements for programmatic month/year sync -->
                     <select id="cal-select-month" style="display: none;" onchange="calJumpMonth(this.value)">
-                        <option value="0">Januari</option>
-                        <option value="1">Februari</option>
-                        <option value="2">Maret</option>
-                        <option value="3">April</option>
-                        <option value="4">Mei</option>
-                        <option value="5">Juni</option>
-                        <option value="6">Juli</option>
-                        <option value="7" selected>Agustus</option>
-                        <option value="8">September</option>
-                        <option value="9">Oktober</option>
-                        <option value="10">November</option>
-                        <option value="11">Desember</option>
+                        <?php foreach ($indoMonthsMap as $idx => $mName): ?>
+                        <option value="<?php echo $idx - 1; ?>" <?php echo ($idx === $realMonthIndex) ? 'selected' : ''; ?>><?php echo $mName; ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="cal-select-year" style="display: none;" onchange="calJumpYear(this.value)">
-                        <option value="2026" selected>2026</option>
-                        <option value="2027">2027</option>
+                        <option value="<?php echo $realYear - 1; ?>"><?php echo $realYear - 1; ?></option>
+                        <option value="<?php echo $realYear; ?>" selected><?php echo $realYear; ?></option>
+                        <option value="<?php echo $realYear + 1; ?>"><?php echo $realYear + 1; ?></option>
                     </select>
 
                     <!-- Switcher Format Hari Pertama (Senin / Minggu) -->
@@ -881,6 +892,9 @@ sort($categoryList);
                     </div>
                 </div>
             </div>
+
+            <!-- Container Banner Hasil Pencarian Real-time -->
+            <div id="cal-search-banner-container" style="display: none; padding: 0.25rem 0.5rem 0 0.5rem;"></div>
         </div>
 
         <!-- ============================================================== -->
@@ -955,7 +969,7 @@ sort($categoryList);
 
                     <!-- Right Month & Year Title: e.g. "JANUARY 2027" -->
                     <div class="desk-cal-title-area">
-                        <h2 class="desk-cal-month-year-title" id="desk-cal-month-title">AGUSTUS 2026</h2>
+                        <h2 class="desk-cal-month-year-title" id="desk-cal-month-title"><?php echo htmlspecialchars("{$realMonthNameEng} {$realYear}"); ?></h2>
                         <div class="desk-cal-tagline">
                             <i class="ph-bold ph-shield-check"></i> SISTEM PEMBELAJARAN & K3 RESMI
                         </div>
@@ -1115,7 +1129,7 @@ sort($categoryList);
             <div class="cal-agenda-header">
                 <h4 class="cal-agenda-title">
                     <i class="ph-bold ph-list-checks text-accent"></i>
-                    Detail Agenda Kegiatan: <span id="agenda-month-subtitle" style="font-weight: 800; color: #0f766e;">Agustus 2026</span>
+                    Detail Agenda Kegiatan: <span id="agenda-month-subtitle" style="font-weight: 800; color: #0f766e;"><?php echo htmlspecialchars("{$realMonthNameIndo} {$realYear}"); ?></span>
                 </h4>
                 <div class="flex items-center gap-3">
                     <button type="button" id="btn-clear-day-filter" class="sf-btn-outline" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="selectCalendarDay(null)">
@@ -1202,10 +1216,11 @@ var CURRENT_USERNAME = window.CURRENT_USERNAME;
     } catch(e) {}
 })();
 
-// State Kalender (Default format: 'mon' = Senin sebagai hari pertama agar kolom Minggu berwarna Merah terletak persis di sebelah kanan berdampingan dengan kolom NOTES seperti pada foto referensi)
+// State Kalender (Bulan & Tahun Otomatis Sesuai Waktu Real-Time)
+const _nowReal = new Date();
 window.calState = window.calState || {
-    year: 2026,
-    month: 7, // 0 = Jan, 7 = Agustus 2026 (baseline simulasi)
+    year: _nowReal.getFullYear(),
+    month: _nowReal.getMonth(), // 0 = Jan, 9 = Okt (otomatis real-time)
     selectedDay: null,
     filterStatus: 'all', // 'all', 'completed', 'upcoming'
     weekStart: localStorage.getItem('cal_week_start') || 'mon' // 'mon' (Senin) atau 'sun' (Minggu)
@@ -1222,22 +1237,13 @@ const ENG_MONTHS = [
     'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
 ];
 
-// Helper: dapatkan tanggal simulasi aktif sistem (cth: '2026-08-12')
+// Helper: dapatkan tanggal hari ini (Real-Time Sistem)
 function getSystemSimulatedDate() {
-    if (typeof getSimState === 'function') {
-        const sim = getSimState();
-        if (typeof SIM_DATES !== 'undefined' && SIM_DATES[sim.currentIndex]) {
-            const rawLabel = SIM_DATES[sim.currentIndex].label; // '12 Agu 2026'
-            const m = rawLabel.match(/(\d+)\s+([a-zA-Z]+)\s+(\d{4})/);
-            if (m) {
-                const day = m[1].padStart(2, '0');
-                const monMap = { 'agu': '08', 'sep': '09', 'okt': '10', 'nov': '11', 'des': '12' };
-                const mon = monMap[m[2].toLowerCase().substring(0, 3)] || '08';
-                return `${m[3]}-${mon}-${day}`;
-            }
-        }
-    }
-    return '2026-08-12';
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
 }
 
 // -------------------------------------------------------------
@@ -1343,6 +1349,16 @@ function renderCalendar(animate = false) {
     const searchQuery = (document.getElementById('cal-search-input')?.value || '').toLowerCase().trim();
     const categoryQuery = (document.getElementById('cal-category-filter')?.value || '').toLowerCase().trim();
 
+    // 1. Kumpulkan semua event yang cocok di seluruh kalender
+    const allMatchedEvents = ALL_CALENDAR_EVENTS.filter(evt => eventMatchesQuery(evt, searchQuery, categoryQuery));
+
+    // 2. Kumpulkan event yang cocok di bulan berjalan ini
+    const monthPrefix = `${calState.year}-${String(calState.month + 1).padStart(2, '0')}`;
+    let monthEvents = allMatchedEvents.filter(evt => evt.date && evt.date.startsWith(monthPrefix));
+
+    // Update Banner Hasil Pencarian
+    updateCalSearchBanner(searchQuery, monthEvents, allMatchedEvents, monthNameIndo);
+
     // ---------------------------------------------------------
     // RUMUS PENEMPATAN HARI PERSISI
     // JS getDay(): 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
@@ -1362,24 +1378,11 @@ function renderCalendar(animate = false) {
     const daysInPrevMonth = new Date(calState.year, calState.month, 0).getDate();
     const simTodayStr = getSystemSimulatedDate();
 
-    // Kumpulkan Event untuk Bulan Ini
-    const monthPrefix = `${calState.year}-${String(calState.month + 1).padStart(2, '0')}`;
-    let monthEvents = ALL_CALENDAR_EVENTS.filter(evt => {
-        if (!evt.date || !evt.date.startsWith(monthPrefix)) return false;
-        
-        const matchSearch = !searchQuery 
-            || evt.title.toLowerCase().includes(searchQuery) 
-            || (evt.code && evt.code.toLowerCase().includes(searchQuery))
-            || (evt.user_name && evt.user_name.toLowerCase().includes(searchQuery));
-
-        const matchCat = !categoryQuery || (evt.category && evt.category.toLowerCase() === categoryQuery);
-        return matchSearch && matchCat;
-    });
-
-    // Hitung KPI & Badge
+    // Hitung KPI & Badge (Bulan ini jika ada, atau seluruh hasil pencarian)
+    const kpiSourceEvents = (searchQuery && monthEvents.length === 0 && allMatchedEvents.length > 0) ? allMatchedEvents : monthEvents;
     let totalCompleted = 0;
     let totalUpcoming = 0;
-    monthEvents.forEach(evt => {
+    kpiSourceEvents.forEach(evt => {
         if (evt.status === 'completed') totalCompleted++;
         else totalUpcoming++;
     });
@@ -1390,11 +1393,11 @@ function renderCalendar(animate = false) {
     const elUpcMonth = document.getElementById('kpi-upcoming-month');
     const elCompRate = document.getElementById('kpi-compliance-rate');
 
-    if (elTotMonth) elTotMonth.textContent = monthEvents.length;
+    if (elTotMonth) elTotMonth.textContent = kpiSourceEvents.length;
     if (elCompMonth) elCompMonth.textContent = totalCompleted;
     if (elUpcMonth) elUpcMonth.textContent = totalUpcoming;
     if (elCompRate) {
-        const rate = monthEvents.length > 0 ? Math.round((totalCompleted / monthEvents.length) * 100) : 100;
+        const rate = kpiSourceEvents.length > 0 ? Math.round((totalCompleted / kpiSourceEvents.length) * 100) : 100;
         elCompRate.textContent = `${rate}%`;
     }
 
@@ -1402,7 +1405,7 @@ function renderCalendar(animate = false) {
     const pillAll = document.getElementById('count-pill-all');
     const pillComp = document.getElementById('count-pill-completed');
     const pillUpc = document.getElementById('count-pill-upcoming');
-    if (pillAll) pillAll.textContent = monthEvents.length;
+    if (pillAll) pillAll.textContent = kpiSourceEvents.length;
     if (pillComp) pillComp.textContent = totalCompleted;
     if (pillUpc) pillUpc.textContent = totalUpcoming;
 
@@ -1443,8 +1446,10 @@ function renderCalendar(animate = false) {
             return true;
         });
 
+        const isSearchMatched = Boolean(searchQuery && (visibleDayEvents.length > 0));
+
         const cell = document.createElement('div');
-        cell.className = `desk-cal-day-box ${isSunday ? 'is-sun' : ''} ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}`;
+        cell.className = `desk-cal-day-box ${isSunday ? 'is-sun' : ''} ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''} ${isSearchMatched ? 'is-search-matched' : ''}`;
         cell.title = `Klik tanggal ${day} ${monthNameIndo} untuk melihat atau menambahkan kegiatan`;
         cell.onclick = () => onCalendarDateClick(fullDateStr);
 
@@ -1455,7 +1460,7 @@ function renderCalendar(animate = false) {
             const extraCount = visibleDayEvents.length - 1;
             const isCompleted = (firstEvt.status === 'completed');
             eventsHtml = `
-                <div class="cal-date-event-pill ${isCompleted ? 'event-done' : 'event-plan'}" title="${visibleDayEvents.length} Kegiatan Terdaftar: ${escapeHtml(visibleDayEvents.map(e => e.title).join(', '))}">
+                <div class="cal-date-event-pill ${isCompleted ? 'event-done' : 'event-plan'} ${isSearchMatched ? 'matched-pill' : ''}" title="${visibleDayEvents.length} Kegiatan Terdaftar: ${escapeHtml(visibleDayEvents.map(e => e.title).join(', '))}">
                     <span class="cal-event-pill-text">${escapeHtml(firstEvt.title)}</span>
                     ${extraCount > 0 ? `<span class="cal-event-pill-count">+${extraCount}</span>` : ''}
                 </div>
@@ -1499,7 +1504,7 @@ function renderCalendar(animate = false) {
     renderNotesSection();
 
     // Render Dua Kolom Agenda di bawah kalender
-    renderAgendaList(monthEvents);
+    renderAgendaList(monthEvents, allMatchedEvents);
 }
 
 // -------------------------------------------------------------
@@ -1514,6 +1519,7 @@ function renderNotesSection() {
     // Default template catatan berdasarkan bulan aktif
     const isJan2027 = (calState.year === 2027 && calState.month === 0);
     const isAug2026 = (calState.year === 2026 && calState.month === 7);
+    const isOct2026 = (calState.year === 2026 && calState.month === 9);
 
     // 1. Sidebar Notes (Kanan)
     if (sbBody) {
@@ -1531,6 +1537,13 @@ function renderNotesSection() {
                     'Induksi K3 100% personel baru',
                     'Penyerahan Laporan Triwulan IV',
                     'Review Project X Otomasi'
+                ];
+            } else if (isOct2026) {
+                sbNotes = [
+                    'Evaluasi Kepatuhan K3 Kuartal IV',
+                    'Safety Induction Batch 4 Pomalaa',
+                    'Uji POP Mandiri Asesor ESDM',
+                    'Drill Emergency Response Underground'
                 ];
             } else if (isAug2026) {
                 sbNotes = [
@@ -1572,9 +1585,13 @@ function renderNotesSection() {
         } catch(e) {}
 
         if (!planNotes || planNotes.length === 0) {
-            planNotes = isJan2027 
-                ? ['Persiapan dokumen audit kelaikan ESDM', 'Sinkronisasi buku tambang dengan logbook digital']
-                : ['Simulasi tanggap darurat SCSR underground', 'Refresher pengoperasian dump truck 777D'];
+            if (isJan2027) {
+                planNotes = ['Persiapan dokumen audit kelaikan ESDM', 'Sinkronisasi buku tambang dengan logbook digital'];
+            } else if (isOct2026) {
+                planNotes = ['Evaluasi bulanan kepatuhan keselamatan tambang', 'Uji kesiapsiagaan SCSR di Rescue Chamber Portal Ciguha'];
+            } else {
+                planNotes = ['Simulasi tanggap darurat SCSR underground', 'Refresher pengoperasian dump truck 777D'];
+            }
         }
 
         let planHtml = '';
@@ -1600,9 +1617,13 @@ function renderNotesSection() {
         } catch(e) {}
 
         if (!fupNotes || fupNotes.length === 0) {
-            fupNotes = isJan2027 
-                ? ['Follow-up evaluasi Project X bersama konsultan', 'Konfirmasi jadwal asesmen LSP ESDM batch 1']
-                : ['Follow-up penerbitan lisensi K3 Kemnaker', 'Laporan mingguan kepatuhan Golden Rules K3'];
+            if (isJan2027) {
+                fupNotes = ['Follow-up evaluasi Project X bersama konsultan', 'Konfirmasi jadwal asesmen LSP ESDM batch 1'];
+            } else if (isOct2026) {
+                fupNotes = ['Follow-up jadwal asesmen POP LSP ESDM batch mandiri', 'Penyusunan rekapitulasi jam pelatihan kuartal III'];
+            } else {
+                fupNotes = ['Follow-up penerbitan lisensi K3 Kemnaker', 'Laporan mingguan kepatuhan Golden Rules K3'];
+            }
         }
 
         let fupHtml = '';
@@ -1723,17 +1744,48 @@ function printDeskCalendar() {
 // -------------------------------------------------------------
 // RENDER AGENDA TIMELINE: DUA KOLOM (TELAH DILAKSANAKAN & AKAN TERJADI)
 // -------------------------------------------------------------
-function renderAgendaList(monthEvents) {
+function renderAgendaList(monthEvents, allMatchedEvents = []) {
     const listCompleted = document.getElementById('agenda-list-completed');
     const listUpcoming = document.getElementById('agenda-list-upcoming');
     const badgeCompleted = document.getElementById('badge-count-completed');
     const badgeUpcoming = document.getElementById('badge-count-upcoming');
+    const subtitleMonth = document.getElementById('agenda-month-subtitle');
+    const btnClearFilter = document.getElementById('btn-clear-day-filter');
 
     if (!listCompleted || !listUpcoming) return;
 
-    let targetEvents = [...monthEvents];
+    const searchQuery = (document.getElementById('cal-search-input')?.value || '').trim();
+
+    let targetEvents = [];
     if (calState.selectedDay) {
-        targetEvents = targetEvents.filter(e => e.date === calState.selectedDay);
+        // Jika sedang memilih tanggal tertentu
+        const sourceEvents = (searchQuery && allMatchedEvents.length > 0) ? allMatchedEvents : monthEvents;
+        targetEvents = sourceEvents.filter(e => e.date === calState.selectedDay);
+        if (subtitleMonth) {
+            subtitleMonth.textContent = `${formatIndoDate(calState.selectedDay)}${searchQuery ? ` • Pencarian: "${searchQuery}"` : ''}`;
+        }
+        if (btnClearFilter) btnClearFilter.style.display = 'inline-flex';
+    } else if (searchQuery) {
+        // Jika sedang mode pencarian aktif:
+        if (monthEvents.length === 0 && allMatchedEvents.length > 0) {
+            // Jika di bulan ini 0 kegiatan namun di bulan lain ada, tampilkan semua kegiatan yang cocok!
+            targetEvents = [...allMatchedEvents];
+            if (subtitleMonth) {
+                subtitleMonth.textContent = `Pencarian Seluruh Bulan: "${searchQuery}" (${allMatchedEvents.length} Hasil Ditemukan)`;
+            }
+        } else {
+            targetEvents = [...monthEvents];
+            if (subtitleMonth) {
+                subtitleMonth.textContent = `${INDO_MONTHS[calState.month]} ${calState.year} • Pencarian: "${searchQuery}" (${monthEvents.length} Hasil)`;
+            }
+        }
+        if (btnClearFilter) btnClearFilter.style.display = 'none';
+    } else {
+        targetEvents = [...monthEvents];
+        if (subtitleMonth) {
+            subtitleMonth.textContent = `${INDO_MONTHS[calState.month]} ${calState.year}`;
+        }
+        if (btnClearFilter) btnClearFilter.style.display = 'none';
     }
 
     const completedEvents = targetEvents.filter(e => e.status === 'completed');
@@ -1747,7 +1799,11 @@ function renderAgendaList(monthEvents) {
         listCompleted.innerHTML = `
             <div class="cal-empty-state">
                 <i class="ph-bold ph-check-circle" style="color: #cbd5e1;"></i>
-                <p style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Belum ada riwayat kegiatan selesai ${calState.selectedDay ? 'pada tanggal ini' : 'di bulan ini'}.</p>
+                <p style="font-size: 0.85rem; font-weight: 600; color: #64748b;">
+                    ${searchQuery 
+                        ? `Tidak ada riwayat kegiatan selesai yang cocok dengan "${escapeHtml(searchQuery)}".` 
+                        : `Belum ada riwayat kegiatan selesai ${calState.selectedDay ? 'pada tanggal ini' : 'di bulan ini'}.`}
+                </p>
             </div>
         `;
     } else {
@@ -1764,7 +1820,7 @@ function renderAgendaList(monthEvents) {
                         </span>
                     </div>
                     
-                    <h5 class="cal-agenda-card-title">${escapeHtml(e.title)}</h5>
+                    <h5 class="cal-agenda-card-title">${searchQuery ? highlightMatch(e.title, searchQuery) : escapeHtml(e.title)}</h5>
                     
                     <div class="cal-agenda-card-meta">
                         <span><i class="ph-bold ph-tag"></i> ${escapeHtml(e.category)}</span>
@@ -1776,9 +1832,14 @@ function renderAgendaList(monthEvents) {
                         <span class="text-xs" style="color: #059669; font-weight: 700;">
                             <i class="ph-fill ph-seal-check"></i> Selesai & Terverifikasi (100%)
                         </span>
-                        <button type="button" class="sf-btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openCalendarEventDetailModal('${e.id}')">
-                            Lihat Detail
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" class="sf-btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.78rem;" onclick="calJumpToEvent('${e.id}', '${e.date}')" title="Buka jadwal tanggal ini di Kalender Meja">
+                                <i class="ph-bold ph-calendar"></i> Kalender
+                            </button>
+                            <button type="button" class="sf-btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openCalendarEventDetailModal('${e.id}')">
+                                Detail
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1790,7 +1851,11 @@ function renderAgendaList(monthEvents) {
         listUpcoming.innerHTML = `
             <div class="cal-empty-state">
                 <i class="ph-bold ph-calendar-plus" style="color: #cbd5e1;"></i>
-                <p style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Tidak ada jadwal pelatihan mendatang ${calState.selectedDay ? 'pada tanggal ini' : 'di bulan ini'}.</p>
+                <p style="font-size: 0.85rem; font-weight: 600; color: #64748b;">
+                    ${searchQuery 
+                        ? `Tidak ada agenda terjadwal yang cocok dengan "${escapeHtml(searchQuery)}".` 
+                        : `Tidak ada jadwal pelatihan mendatang ${calState.selectedDay ? 'pada tanggal ini' : 'di bulan ini'}.`}
+                </p>
             </div>
         `;
     } else {
@@ -1799,15 +1864,29 @@ function renderAgendaList(monthEvents) {
             const countdownBadge = getCountdownBadge(e.date);
 
             const isUserAdmin = (CURRENT_USER_ROLE === 'Admin');
+            const currentUname = (window.CURRENT_USERNAME || '').toLowerCase();
+            const eventUname = (e.user_username || '').toLowerCase();
+            const isOwner = (eventUname && eventUname === currentUname);
+            const isAnotherUserActivity = (eventUname && !isOwner && !isUserAdmin);
+
             const safeTitle = (e.title || '').replace(/'/g, "\\'");
             const safeType = (e.type || 'Wajib').replace(/'/g, "\\'");
             const safeCat = (e.category || 'Operasional Tambang').replace(/'/g, "\\'");
             const safeDur = (e.duration || '2 Hari (16 Jam)').replace(/'/g, "\\'");
             const safeLev = (e.level || 'Basic').replace(/'/g, "\\'");
 
-            const actionBtn = isUserAdmin
-                ? `<button type="button" class="sf-btn-teal" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openAssignTrainingModal('${safeTitle}')"><i class="ph-bold ph-user-plus"></i> Tugaskan</button>`
-                : `<button type="button" class="sf-btn-teal" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openNewActivityModalWithPreset('${safeTitle}', '${safeType}', '${safeCat}', '${safeDur}', '${safeLev}')"><i class="ph-bold ph-check"></i> Ikuti Jadwal</button>`;
+            let actionBtn = '';
+            if (isAnotherUserActivity) {
+                actionBtn = `<span class="tag tag-gray" style="font-size: 0.72rem; padding: 3px 8px;" title="Kegiatan milik rekan pegawai lain: hanya dapat dilihat di kalender"><i class="ph-bold ph-eye"></i> Jadwal Rekan</span>`;
+            } else if (isOwner) {
+                actionBtn = `<a href="?page=my_learning" class="sf-btn-teal" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; text-decoration: none;"><i class="ph-bold ph-graduation-cap"></i> Kegiatan Saya</a>`;
+            } else if (isUserAdmin) {
+                actionBtn = `<button type="button" class="sf-btn-teal" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openAssignTrainingModal('${safeTitle}')"><i class="ph-bold ph-user-plus"></i> Tugaskan</button>`;
+            } else {
+                actionBtn = `<button type="button" class="sf-btn-teal" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openNewActivityModalWithPreset('${safeTitle}', '${safeType}', '${safeCat}', '${safeDur}', '${safeLev}')"><i class="ph-bold ph-check"></i> Ikuti Jadwal</button>`;
+            }
+
+            const targetLabel = e.user_name ? ('Pegawai: ' + e.user_name) : (e.target || 'Seluruh Pegawai Site');
 
             return `
                 <div class="cal-agenda-card card-upcoming">
@@ -1820,17 +1899,20 @@ function renderAgendaList(monthEvents) {
                         </span>
                     </div>
                     
-                    <h5 class="cal-agenda-card-title">${escapeHtml(e.title)}</h5>
+                    <h5 class="cal-agenda-card-title">${searchQuery ? highlightMatch(e.title, searchQuery) : escapeHtml(e.title)}</h5>
                     
                     <div class="cal-agenda-card-meta">
                         <span><i class="ph-bold ph-tag"></i> ${escapeHtml(e.category)}</span>
                         <span><i class="ph-bold ph-clock"></i> ${escapeHtml(e.duration)}</span>
-                        <span><i class="ph-bold ph-users"></i> ${escapeHtml(e.target || 'Seluruh Pegawai Site')}</span>
+                        <span title="${escapeHtml(targetLabel)}"><i class="ph-bold ph-user"></i> ${escapeHtml(targetLabel)}</span>
                     </div>
 
                     <div class="cal-agenda-card-bottom">
                         ${countdownBadge}
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button type="button" class="sf-btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.78rem;" onclick="calJumpToEvent('${e.id}', '${e.date}')" title="Buka jadwal tanggal ini di Kalender Meja">
+                                <i class="ph-bold ph-calendar"></i> Kalender
+                            </button>
                             <button type="button" class="sf-btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.78rem;" onclick="openCalendarEventDetailModal('${e.id}')">
                                 Info
                             </button>
@@ -1890,10 +1972,14 @@ function calChangeMonth(delta) {
 }
 
 function calGoToToday() {
-    calState.year = 2026;
-    calState.month = 7; // Agustus 2026
+    const now = new Date();
+    calState.year = now.getFullYear();
+    calState.month = now.getMonth(); // Real-time bulan saat ini
     calState.selectedDay = null;
-    renderCalendar();
+    renderCalendar(true);
+    if (typeof showToast === 'function') {
+        showToast(`Kalender kembali ke bulan real-time: ${INDO_MONTHS[calState.month]} ${calState.year}`, 'info');
+    }
 }
 
 function calJumpMonth(val) {
@@ -1997,10 +2083,10 @@ function openDateActionModal(dateStr) {
                                         <span class="tag tag-gray text-xs">${escapeHtml(evt.type || 'Pelatihan')}</span>
                                     </div>
                                     <strong class="text-sm text-dark block truncate" title="${escapeHtml(evt.title)}">${escapeHtml(evt.title)}</strong>
-                                    <div class="text-xs text-muted mt-0.5 flex items-center gap-3">
+                                    <div class="text-xs text-muted mt-0.5 flex items-center gap-3 flex-wrap">
                                         <span><i class="ph-bold ph-tag"></i> ${escapeHtml(evt.category)}</span>
                                         <span><i class="ph-bold ph-clock"></i> ${escapeHtml(evt.duration || '1 Hari')}</span>
-                                        <span><i class="ph-bold ph-map-pin"></i> ${escapeHtml(evt.location || 'Site Pomalaa')}</span>
+                                        <span><i class="ph-bold ph-user"></i> ${escapeHtml(evt.user_name || 'Seluruh Pegawai')}</span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -2115,6 +2201,257 @@ function deleteCustomCalendarEvent(eventId, dateStr) {
     }
 }
 
+// -------------------------------------------------------------
+// SISTEM PENCARIAN & FILTER KEGIATAN KALENDER REAL-TIME
+// -------------------------------------------------------------
+function eventMatchesQuery(evt, searchQuery, categoryQuery) {
+    if (categoryQuery) {
+        const evtCat = (evt.category || '').toLowerCase();
+        if (evtCat !== categoryQuery) return false;
+    }
+    if (!searchQuery) return true;
+
+    const q = searchQuery.toLowerCase().trim();
+    return (evt.title && evt.title.toLowerCase().includes(q))
+        || (evt.code && evt.code.toLowerCase().includes(q))
+        || (evt.user_name && evt.user_name.toLowerCase().includes(q))
+        || (evt.user_username && evt.user_username.toLowerCase().includes(q))
+        || (evt.category && evt.category.toLowerCase().includes(q))
+        || (evt.description && evt.description.toLowerCase().includes(q))
+        || (evt.location && evt.location.toLowerCase().includes(q))
+        || (evt.instructor && evt.instructor.toLowerCase().includes(q))
+        || (evt.target && evt.target.toLowerCase().includes(q))
+        || (evt.type && evt.type.toLowerCase().includes(q))
+        || (evt.date && evt.date.includes(q));
+}
+
+function highlightMatch(text, query) {
+    if (!text) return '';
+    if (!query) return escapeHtml(text);
+    const escapedText = escapeHtml(text);
+    const escapedQuery = escapeHtml(query);
+    const regex = new RegExp(`(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return escapedText.replace(regex, '<span class="cal-search-highlight">$1</span>');
+}
+
+function updateCalSearchBanner(searchQuery, monthEvents, allMatchedEvents, monthNameIndo) {
+    const bannerContainer = document.getElementById('cal-search-banner-container');
+    if (!bannerContainer) return;
+
+    if (!searchQuery) {
+        bannerContainer.innerHTML = '';
+        bannerContainer.style.display = 'none';
+        return;
+    }
+
+    const monthPrefix = `${calState.year}-${String(calState.month + 1).padStart(2, '0')}`;
+    const otherMonthMap = {};
+    allMatchedEvents.forEach(e => {
+        if (!e.date) return;
+        const p = e.date.split('-');
+        if (p.length >= 2) {
+            const key = `${p[0]}-${p[1]}`;
+            if (key !== monthPrefix) {
+                const y = parseInt(p[0], 10);
+                const m = parseInt(p[1], 10) - 1;
+                if (!otherMonthMap[key]) {
+                    otherMonthMap[key] = { year: y, month: m, label: `${INDO_MONTHS[m]} ${y}`, count: 0 };
+                }
+                otherMonthMap[key].count++;
+            }
+        }
+    });
+
+    const otherMonthKeys = Object.keys(otherMonthMap);
+    let jumpBtnsHtml = '';
+    if (otherMonthKeys.length > 0) {
+        jumpBtnsHtml = `
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs text-muted font-bold">Buka bulan lain:</span>
+                ${otherMonthKeys.map(k => {
+                    const om = otherMonthMap[k];
+                    return `<button type="button" class="btn-jump-month-pill" onclick="calJumpToYearMonth(${om.year}, ${om.month})">
+                        <i class="ph-bold ph-arrow-right"></i> ${om.label} <span class="badge-count">${om.count}</span>
+                    </button>`;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    let statusText = '';
+    if (allMatchedEvents.length === 0) {
+        statusText = `<span style="color:#dc2626; font-weight:700;"><i class="ph-bold ph-warning-circle"></i> Tidak ditemukan kegiatan dengan kata kunci "<strong>${escapeHtml(searchQuery)}</strong>"</span>`;
+    } else if (monthEvents.length === 0) {
+        statusText = `<span style="color:#b45309; font-weight:700;"><i class="ph-bold ph-info"></i> Tidak ada kegiatan di bulan <strong>${monthNameIndo} ${calState.year}</strong>. Ditemukan <strong>${allMatchedEvents.length} kegiatan</strong> di bulan lain:</span>`;
+    } else {
+        statusText = `<span style="color:#0f766e; font-weight:700;"><i class="ph-bold ph-check-circle"></i> Ditemukan <strong>${allMatchedEvents.length} kegiatan</strong> (${monthEvents.length} di bulan ${monthNameIndo} ${calState.year})</span>`;
+    }
+
+    bannerContainer.innerHTML = `
+        <div class="cal-search-banner">
+            <div class="flex items-center gap-2 flex-wrap">
+                ${statusText}
+                ${jumpBtnsHtml}
+            </div>
+            <button type="button" class="btn-clear-search-pill" onclick="clearCalSearch()" title="Hapus Filter Pencarian">
+                <i class="ph-bold ph-x"></i> Hapus Filter
+            </button>
+        </div>
+    `;
+    bannerContainer.style.display = 'block';
+}
+
+function handleCalSearchInput(val) {
+    const clearBtn = document.getElementById('cal-search-clear');
+    if (clearBtn) {
+        clearBtn.style.display = (val && val.trim().length > 0) ? 'inline-flex' : 'none';
+    }
+
+    renderLiveSearchDropdown(val);
+    filterCalendar();
+}
+
+function handleCalSearchFocus() {
+    const input = document.getElementById('cal-search-input');
+    if (input && input.value.trim().length > 0) {
+        renderLiveSearchDropdown(input.value);
+    }
+}
+
+function handleCalSearchKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const input = document.getElementById('cal-search-input');
+        const q = (input?.value || '').toLowerCase().trim();
+        const cat = (document.getElementById('cal-category-filter')?.value || '').toLowerCase().trim();
+        if (q) {
+            const matches = ALL_CALENDAR_EVENTS.filter(evt => eventMatchesQuery(evt, q, cat));
+            if (matches.length > 0) {
+                calJumpToEvent(matches[0].id, matches[0].date);
+            }
+        }
+        const dropdown = document.getElementById('cal-search-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+    } else if (e.key === 'Escape') {
+        const dropdown = document.getElementById('cal-search-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+    }
+}
+
+function renderLiveSearchDropdown(query) {
+    const dropdown = document.getElementById('cal-search-dropdown');
+    if (!dropdown) return;
+
+    const q = (query || '').trim();
+    const cat = (document.getElementById('cal-category-filter')?.value || '').toLowerCase().trim();
+
+    if (!q) {
+        dropdown.innerHTML = '';
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    const matches = ALL_CALENDAR_EVENTS.filter(evt => eventMatchesQuery(evt, q, cat));
+
+    if (matches.length === 0) {
+        dropdown.innerHTML = `
+            <div class="cal-dropdown-empty">
+                <i class="ph-bold ph-magnifying-glass" style="font-size: 1.5rem; color: #cbd5e1; display: block; margin-bottom: 0.35rem;"></i>
+                Tidak ada kegiatan yang sesuai dengan "<strong>${escapeHtml(q)}</strong>"
+            </div>
+        `;
+        dropdown.style.display = 'block';
+        return;
+    }
+
+    const topMatches = matches.slice(0, 8);
+    let html = `
+        <div class="cal-dropdown-header">
+            <span>Ditemukan ${matches.length} kegiatan</span>
+            <span class="text-xs text-muted">Klik untuk menuju tanggal</span>
+        </div>
+    `;
+
+    topMatches.forEach(e => {
+        const isDone = (e.status === 'completed');
+        const statusBadge = isDone 
+            ? `<span class="tag tag-green text-xs"><i class="ph-fill ph-check-circle"></i> Selesai</span>` 
+            : `<span class="tag tag-sky text-xs"><i class="ph-fill ph-clock"></i> Terjadwal</span>`;
+
+        html += `
+            <div class="cal-dropdown-item" onclick="calJumpToEvent('${e.id}', '${e.date}')">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="sf-course-code" style="font-size: 0.7rem; padding: 1px 5px;">${escapeHtml(e.code || 'EVENT')}</span>
+                    <span class="cal-dropdown-date"><i class="ph-bold ph-calendar"></i> ${formatIndoDate(e.date)}</span>
+                </div>
+                <div class="cal-dropdown-title">${highlightMatch(e.title, q)}</div>
+                <div class="cal-dropdown-meta">
+                    ${statusBadge}
+                    <span class="text-xs text-muted"><i class="ph-bold ph-tag"></i> ${escapeHtml(e.category)}</span>
+                </div>
+            </div>
+        `;
+    });
+
+    if (matches.length > 8) {
+        html += `
+            <div class="cal-dropdown-footer">
+                Dan ${matches.length - 8} kegiatan lainnya (lihat detail di tabel agenda bawah)
+            </div>
+        `;
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+}
+
+function clearCalSearch() {
+    const input = document.getElementById('cal-search-input');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('cal-search-clear');
+    if (clearBtn) clearBtn.style.display = 'none';
+    const dropdown = document.getElementById('cal-search-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    calState.selectedDay = null;
+    filterCalendar();
+}
+
+function calJumpToYearMonth(year, month, selectedDay = null) {
+    calState.year = parseInt(year, 10);
+    calState.month = parseInt(month, 10);
+    calState.selectedDay = selectedDay;
+    renderCalendar(true);
+    if (selectedDay) {
+        setTimeout(() => {
+            const dayEl = document.querySelector(`.desk-cal-day-box.is-selected`);
+            if (dayEl) {
+                dayEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 180);
+    }
+}
+
+function calJumpToEvent(eventId, dateStr) {
+    if (!dateStr) return;
+    const parts = dateStr.split('-');
+    if (parts.length >= 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        calJumpToYearMonth(y, m, dateStr);
+    }
+
+    const dropdown = document.getElementById('cal-search-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+
+    if (typeof showToast === 'function') {
+        showToast(`Membuka jadwal tanggal ${formatIndoDate(dateStr)}`, 'info');
+    }
+
+    setTimeout(() => {
+        openCalendarEventDetailModal(eventId);
+    }, 250);
+}
+
 function filterCalendar() {
     renderCalendar();
 }
@@ -2133,9 +2470,24 @@ function openCalendarEventDetailModal(eventId) {
 
     const formattedDate = formatIndoDate(evt.date);
     const isAdmin = (CURRENT_USER_ROLE === 'Admin');
+    const currentUname = (window.CURRENT_USERNAME || '').toLowerCase();
+    const eventUname = (evt.user_username || '').toLowerCase();
+    const isOwner = (eventUname && eventUname === currentUname);
+    const isAnotherUserActivity = (eventUname && !isOwner && !isAdmin);
+
+    const peerNoticeHtml = isAnotherUserActivity ? `
+        <div class="glass-panel p-3 mb-3" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; color:#0369a1; font-size:0.8rem; line-height:1.45;">
+            <div class="flex items-center gap-2 font-bold mb-1" style="color:#0284c7;">
+                <i class="ph-bold ph-shield-check" style="font-size:1.15rem;"></i>
+                <span>Hak Akses Kalender: Mode Lihat Jadwal (View-Only)</span>
+            </div>
+            Kegiatan ini terdaftar resmi atas nama pegawai <strong>${escapeHtml(evt.user_name || evt.user_username)}</strong>. Rekan kerja lainnya dapat melihat informasi jadwal pada kalender, namun hak konfirmasi dan upload berkas absensi hanya dimiliki oleh pegawai yang bersangkutan &amp; Tim HC/Admin.
+        </div>
+    ` : '';
 
     const bodyHtml = `
         <div class="calendar-detail-modal">
+            ${peerNoticeHtml}
             <div class="flex items-center gap-2 mb-3">
                 <span class="sf-course-code">${escapeHtml(evt.code)}</span>
                 ${statusPill}
@@ -2164,8 +2516,8 @@ function openCalendarEventDetailModal(eventId) {
                         <strong class="text-dark"><i class="ph-bold ph-chart-bar text-accent"></i> ${escapeHtml(evt.level)}</strong>
                     </div>
                     <div style="grid-column: 1 / -1;">
-                        <span class="text-xs text-muted uppercase font-mono block">Sasaran Peserta:</span>
-                        <strong class="text-dark"><i class="ph-bold ph-users text-accent"></i> ${escapeHtml(evt.user_name || evt.target || 'Seluruh Pegawai Site')}</strong>
+                        <span class="text-xs text-muted uppercase font-mono block">Pemilik / Sasaran Peserta:</span>
+                        <strong class="text-dark"><i class="ph-bold ph-user text-accent"></i> ${escapeHtml(evt.user_name ? (evt.user_name + (evt.user_username ? ' (@' + evt.user_username + ')' : '')) : (evt.target || 'Seluruh Pegawai Site'))}</strong>
                     </div>
                 </div>
             </div>
@@ -2185,10 +2537,15 @@ function openCalendarEventDetailModal(eventId) {
     const safeLev = (evt.level || 'Basic').replace(/'/g, "\\'");
 
     let actionBtn = '';
-    if (!isDone) {
-        actionBtn = isAdmin
-            ? `<button type="button" class="btn-dark" onclick="closeModal(); openAssignTrainingModal('${safeTitle}')"><i class="ph-bold ph-user-plus"></i> Tugaskan ke Pegawai</button>`
-            : `<button type="button" class="btn-dark" onclick="closeModal(); openNewActivityModalWithPreset('${safeTitle}', '${safeType}', '${safeCat}', '${safeDur}', '${safeLev}')"><i class="ph-bold ph-check"></i> Ikuti Jadwal Ini</button>`;
+    if (isAnotherUserActivity) {
+        // Rekan pegawai lain: hanya melihat jadwal di kalender
+        actionBtn = '';
+    } else if (isOwner) {
+        actionBtn = `<button type="button" class="btn-dark" onclick="closeModal(); window.location.href='?page=my_learning'"><i class="ph-bold ph-graduation-cap"></i> Buka di My Learning Saya</button>`;
+    } else if (isAdmin) {
+        actionBtn = `<button type="button" class="btn-dark" onclick="closeModal(); openAssignTrainingModal('${safeTitle}')"><i class="ph-bold ph-user-plus"></i> Tugaskan ke Pegawai</button>`;
+    } else if (!isDone) {
+        actionBtn = `<button type="button" class="btn-dark" onclick="closeModal(); openNewActivityModalWithPreset('${safeTitle}', '${safeType}', '${safeCat}', '${safeDur}', '${safeLev}')"><i class="ph-bold ph-check"></i> Ikuti Jadwal Ini</button>`;
     } else {
         actionBtn = `<button type="button" class="btn-dark" onclick="closeModal(); window.location.href='?page=my_learning'"><i class="ph-bold ph-graduation-cap"></i> Buka Logbook & Riwayat</button>`;
     }
@@ -2318,6 +2675,26 @@ async function handleAddNewTrainingFromModal(e) {
 
 // Inisialisasi Kalender saat Halaman Siap
 document.addEventListener('DOMContentLoaded', () => {
+    // Tangani parameter URL pencarian (?q=... atau ?search=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const qParam = urlParams.get('q') || urlParams.get('search');
+    if (qParam) {
+        const sInput = document.getElementById('cal-search-input');
+        if (sInput) {
+            sInput.value = qParam;
+            const clearBtn = document.getElementById('cal-search-clear');
+            if (clearBtn) clearBtn.style.display = 'inline-flex';
+        }
+    }
     renderCalendar();
+});
+
+// Listener klik di luar search box untuk menutup live dropdown
+document.addEventListener('click', (e) => {
+    const searchBox = document.querySelector('.cal-search-box');
+    const dropdown = document.getElementById('cal-search-dropdown');
+    if (searchBox && dropdown && !searchBox.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
 });
 </script>

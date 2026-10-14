@@ -34,6 +34,7 @@ $lnaList = get_lna_catalog();
                 <h1 class="page-title"><?php echo $user_type === 'Admin' ? 'Executive Dashboard Monitoring' : 'Personal Dashboard'; ?></h1>
                 <span class="badge-role-tag"><?php echo strtoupper($user_type); ?> · SITE POMALAA</span>
             </div>
+            <p class="text-xs text-muted mt-1">Selamat datang, <strong><?php echo htmlspecialchars($user_name); ?></strong> — Ringkasan progres pembelajaran & kepatuhan K3 Site Pomalaa</p>
         </div>
         <div class="page-top-actions">
             <?php if ($user_type === 'Admin'): ?>

@@ -297,44 +297,98 @@ a {
     animation: fadeInDown 0.7s ease-out 0.1s both;
 }
 
-/* Pure Logo with Ambient Backlight Glow */
+/* Dual Logos (PT ANTAM Tbk & Smart Learning Bersanding) with Ambient Backlight Glow */
 .login-logo-hero-container {
     position: relative;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
     margin: 0 auto 1.5rem auto;
 }
 
 .hero-logo-halo {
     position: absolute;
-    width: 260px;
-    height: 130px;
-    background: radial-gradient(ellipse at center, rgba(15, 118, 110, 0.22) 0%, rgba(14, 165, 233, 0.1) 50%, transparent 75%);
-    filter: blur(22px);
+    top: 50%;
+    left: calc(50% - 16px);
+    transform: translate(-50%, -50%);
+    width: 440px;
+    height: 100px;
+    background: radial-gradient(ellipse at center, rgba(15, 118, 110, 0.12) 0%, rgba(14, 165, 233, 0.08) 50%, transparent 80%);
+    filter: blur(28px);
     z-index: 0;
     pointer-events: none;
     animation: pulseAura 4s ease-in-out infinite alternate;
 }
 
-.hero-pure-logo {
+.hero-logos-pair {
     position: relative;
     z-index: 1;
-    height: 110px;
-    width: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.75rem;
+    transform: translateX(-16px);
+}
+
+.hero-dual-logo {
+    display: block;
     object-fit: contain;
-    filter: drop-shadow(0 8px 20px rgba(15, 23, 42, 0.12));
+    filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.08));
     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
 }
 
-.hero-pure-logo:hover {
-    transform: translateY(-4px) scale(1.03);
-    filter: drop-shadow(0 14px 28px rgba(15, 118, 110, 0.25));
+.hero-logo-antam {
+    height: 52px;
+    width: auto;
+    max-width: 200px;
+}
+
+.hero-logo-smart {
+    height: 58px;
+    width: auto;
+    max-width: 150px;
+}
+
+.hero-logos-divider {
+    width: 1.5px;
+    height: 40px;
+    background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.7) 15%, rgba(148, 163, 184, 0.7) 85%, transparent);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.hero-dual-logo:hover {
+    transform: translateY(-2px) scale(1.02);
+    filter: drop-shadow(0 8px 20px rgba(15, 118, 110, 0.2));
 }
 
 @keyframes pulseAura {
-    0% { transform: scale(0.92); opacity: 0.65; }
-    100% { transform: scale(1.08); opacity: 1; }
+    0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.6; }
+    100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.9; }
+}
+
+@media (max-width: 640px) {
+    .hero-logos-pair {
+        gap: 1.25rem;
+        transform: translateX(-10px);
+    }
+    .hero-logo-antam {
+        height: 38px;
+        max-width: 145px;
+    }
+    .hero-logo-smart {
+        height: 44px;
+        max-width: 110px;
+    }
+    .hero-logos-divider {
+        height: 30px;
+    }
+    .hero-logo-halo {
+        left: calc(50% - 10px);
+        width: 280px;
+        height: 80px;
+    }
 }
 
 .text-gradient-teal {
@@ -812,9 +866,49 @@ a {
 .brand-link {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
     text-decoration: none;
     transition: var(--transition);
+    user-select: none;
+}
+
+/* PT ANTAM Logo in Topbar */
+.topbar-antam-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.topbar-antam-logo {
+    height: 26px;
+    width: auto;
+    max-width: 95px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.brand-link:hover .topbar-antam-logo {
+    transform: translateY(-1px) scale(1.02);
+    filter: drop-shadow(0 2px 6px rgba(15, 118, 110, 0.2));
+}
+
+/* Elegant Divider */
+.topbar-brand-divider {
+    width: 1.5px;
+    height: 24px;
+    background: #cbd5e1;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+/* Smart Learning Brand Unit */
+.brand-smart-learning-unit {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-shrink: 0;
 }
 
 .brand-logo-emblem {
@@ -888,6 +982,25 @@ a {
     color: #64748b;
     font-weight: 500;
     letter-spacing: 0.2px;
+}
+
+@media (max-width: 900px) {
+    .brand-subtitle {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .topbar-antam-logo {
+        height: 22px;
+        max-width: 75px;
+    }
+    .topbar-brand-divider {
+        height: 18px;
+    }
+    .brand-title {
+        font-size: 0.95rem;
+    }
 }
 
 /* Header Global Search (SunFish Style) */
@@ -3355,6 +3468,33 @@ a {
     .hero-badges-row {
         justify-content: center;
     }
+
+    /* Settings Profile Banner Responsive */
+    .settings-profile-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.5rem 1.25rem;
+        gap: 1.35rem;
+    }
+
+    .settings-banner-watermark-img {
+        width: 100%;
+        opacity: 0.18;
+        mask-image: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
+        -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
+    }
+
+    .settings-banner-left {
+        width: 100%;
+    }
+
+    .settings-banner-right {
+        width: 100%;
+    }
+
+    .settings-security-pill {
+        width: 100%;
+    }
     
     .home-bottom-strip {
         flex-direction: column;
@@ -4458,12 +4598,6 @@ a {
 }
 
 /* Settings Styles */
-.settings-profile-banner {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--radius-md);
-    padding: 1.5rem 2rem;
-}
 .settings-avatar-preview {
     width: 64px;
     height: 64px;
@@ -4793,13 +4927,214 @@ input:checked + .slider:before {
     padding-bottom: 3rem;
 }
 
+/* Settings Profile Hero Banner (With Security & Mining Watermark Artwork) */
 .settings-profile-banner {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
-    border: 1px solid #ccfbf1;
-    border-radius: var(--radius-lg, 14px);
-    padding: 1.5rem 1.75rem;
-    box-shadow: 0 4px 16px rgba(15, 118, 110, 0.05);
-    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    background: linear-gradient(135deg, #022c22 0%, #064e3b 35%, #065f46 70%, #047857 100%);
+    color: #ffffff;
+    border: 1px solid rgba(52, 211, 153, 0.28);
+    border-left: 6px solid #10b981;
+    border-radius: 16px;
+    padding: 1.85rem 2.25rem;
+    box-shadow: 0 16px 36px -8px rgba(6, 78, 59, 0.42), 0 4px 12px rgba(2, 44, 34, 0.2);
+    margin-bottom: 1.75rem;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.settings-profile-banner:hover {
+    box-shadow: 0 20px 42px -8px rgba(6, 78, 59, 0.52), 0 6px 16px rgba(2, 44, 34, 0.25);
+    border-color: rgba(52, 211, 153, 0.45);
+}
+
+/* Watermark Silhouette Layer for Profile & Security Settings */
+.settings-banner-watermark {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.settings-banner-watermark-glow {
+    position: absolute;
+    top: -40%;
+    right: 15%;
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.35) 0%, rgba(16, 185, 129, 0.15) 45%, transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.settings-banner-watermark-img {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 62%;
+    height: 100%;
+    background-image: url('../img/banner_security_profile.jpg');
+    background-size: cover;
+    background-position: center right;
+    opacity: 0.34;
+    mix-blend-mode: screen;
+    filter: saturate(1.25) brightness(1.1) contrast(1.1);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.18) 15%, rgba(0, 0, 0, 0.85) 60%, rgba(0, 0, 1) 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.18) 15%, rgba(0, 0, 0, 0.85) 60%, rgba(0, 0, 1) 100%);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+
+.settings-profile-banner:hover .settings-banner-watermark-img {
+    transform: scale(1.03) translateX(-4px);
+    opacity: 0.44;
+}
+
+.settings-banner-left {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1.35rem;
+    flex-wrap: wrap;
+}
+
+.settings-user-info-block {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-banner-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 1.2px;
+    color: #a7f3d0;
+    background: rgba(6, 95, 70, 0.6);
+    border: 1px solid rgba(110, 231, 183, 0.35);
+    padding: 0.28rem 0.85rem;
+    border-radius: 9999px;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    width: fit-content;
+}
+
+.settings-banner-tag i {
+    color: #34d399;
+}
+
+.settings-banner-name {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(2, 44, 34, 0.5);
+    line-height: 1.25;
+}
+
+.settings-badges-row {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 0.65rem;
+}
+
+.settings-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.32rem 0.85rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.74rem;
+    color: #e6fffa;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s ease;
+}
+
+.settings-badge:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.settings-badge i {
+    color: #6ee7b7;
+    font-size: 0.85rem;
+}
+
+.settings-banner-right {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.settings-security-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 1.15rem;
+    background: rgba(2, 44, 34, 0.65);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    transition: all 0.25s ease;
+}
+
+.settings-security-pill:hover {
+    background: rgba(2, 44, 34, 0.82);
+    border-color: rgba(52, 211, 153, 0.55);
+    transform: translateY(-1px);
+}
+
+.sec-pill-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.25);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #34d399;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.sec-pill-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.sec-pill-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+}
+
+.sec-pill-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    color: #a7f3d0;
+    font-family: var(--font-mono);
 }
 
 .settings-avatar-preview {
@@ -6382,6 +6717,7 @@ body.pen-mode-active * {
 }
 
 .cal-search-box {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -6401,6 +6737,192 @@ body.pen-mode-active * {
 .cal-search-box i {
     color: #94a3b8;
     font-size: 0.95rem;
+}
+
+.cal-search-clear {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: none;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: all 0.15s ease;
+}
+
+.cal-search-clear:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.cal-search-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 380px;
+    max-width: 90vw;
+    max-height: 380px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 14px 30px -4px rgba(15, 23, 42, 0.18), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+    z-index: 1050;
+    display: none;
+    padding: 6px;
+}
+
+.cal-dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #64748b;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 4px;
+}
+
+.cal-dropdown-item {
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    margin-bottom: 3px;
+}
+
+.cal-dropdown-item:hover {
+    background: #f0fdfa;
+    border-color: #99f6e4;
+    transform: translateX(2px);
+}
+
+.cal-dropdown-date {
+    font-size: 0.72rem;
+    color: #0f766e;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.cal-dropdown-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.35;
+    margin-bottom: 4px;
+}
+
+.cal-dropdown-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.cal-dropdown-empty {
+    padding: 1.25rem 0.75rem;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.cal-dropdown-footer {
+    padding: 0.45rem 0.65rem;
+    text-align: center;
+    font-size: 0.74rem;
+    color: #64748b;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+    border-radius: 6px;
+    margin-top: 4px;
+}
+
+.cal-search-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(2, 132, 199, 0.08));
+    border: 1px solid rgba(15, 118, 110, 0.25);
+    border-radius: 12px;
+    padding: 0.7rem 1.1rem;
+    margin: 0.85rem 0 1.25rem 0;
+    font-size: 0.84rem;
+    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.05);
+}
+
+.btn-jump-month-pill {
+    background: #ffffff;
+    border: 1px solid #0f766e;
+    color: #0f766e;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s ease;
+}
+
+.btn-jump-month-pill:hover {
+    background: #0f766e;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(15, 118, 110, 0.2);
+}
+
+.btn-jump-month-pill .badge-count {
+    background: rgba(15, 118, 110, 0.15);
+    color: #0f766e;
+    padding: 1px 5px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+}
+
+.btn-jump-month-pill:hover .badge-count {
+    background: #ffffff;
+    color: #0f766e;
+}
+
+.btn-clear-search-pill {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    padding: 0.3rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s ease;
+}
+
+.btn-clear-search-pill:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.desk-cal-day-box.is-search-matched {
+    border: 2px solid #0f766e !important;
+    background: rgba(15, 118, 110, 0.08) !important;
+    box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.22);
+}
+
+.cal-search-highlight {
+    background: #fef08a;
+    color: #854d0e;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: 800;
 }
 
 .cal-search-input {

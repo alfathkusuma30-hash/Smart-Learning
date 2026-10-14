@@ -273,11 +273,11 @@ $users = get_all_users();
                             <a href="uploads/attendance/<?php echo htmlspecialchars($attFileAdmin); ?>" target="_blank" class="tag tag-teal text-xs" style="text-decoration:none; padding:4px 9px; font-weight:700;" title="Biro & Admin dapat melihat dan mengunduh berkas absensi resmi">
                                 <i class="ph-bold ph-eye"></i> Lihat Absensi
                             </a>
-                            <button type="button" class="btn-outline text-xs" style="padding:3px 7px; font-size:0.7rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')" title="Update Berkas Absensi Kegiatan">
+                            <button type="button" class="btn-outline text-xs" style="padding:3px 7px; font-size:0.7rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', '<?php echo addslashes($act['user_username'] ?? ''); ?>', '<?php echo addslashes($act['user_name'] ?? ''); ?>')" title="Update Berkas Absensi Kegiatan">
                                 <i class="ph-bold ph-upload-simple"></i> Update
                             </button>
                             <?php else: ?>
-                            <button type="button" class="btn-dark text-xs" style="padding:4px 9px; font-size:0.725rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>')" title="Konfirmasi Selesai & Upload Berkas Absensi HC">
+                            <button type="button" class="btn-dark text-xs" style="padding:4px 9px; font-size:0.725rem;" onclick="openCompleteActivityAttendanceModal('<?php echo $act['id']; ?>', '<?php echo addslashes($act['title']); ?>', '<?php echo addslashes($act['user_username'] ?? ''); ?>', '<?php echo addslashes($act['user_name'] ?? ''); ?>')" title="Konfirmasi Selesai & Upload Berkas Absensi HC">
                                 <i class="ph-bold ph-upload-simple"></i> Upload Absensi (HC)
                             </button>
                             <?php endif; ?>

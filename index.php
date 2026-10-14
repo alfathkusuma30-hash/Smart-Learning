@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/data.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['username']) && isset($_SESSION['user_id'])) {
-    header("Location: app.php?page=dashboard");
+    header("Location: app.php?page=home");
     exit();
 }
 
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Hapus sesi 2FA sementara
                     unset($_SESSION['pending_2fa']);
 
-                    header("Location: app.php?page=dashboard");
+                    header("Location: app.php?page=home");
                     exit();
                 } else {
                     $errorMessage = $verify['message'];
@@ -141,26 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Pastikan peran/portal type mengikuti portal yang aktif di atas
         $_POST['portal_type'] = ($portal === 'admin') ? 'Admin' : 'User';
 
-        // Handle Avatar Profile Image Upload
-        $uploadedAvatar = null;
-        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/uploads/avatars/';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0777, true);
-            }
-            $fileInfo = pathinfo($_FILES['avatar']['name']);
-            $ext = strtolower($fileInfo['extension'] ?? '');
-            $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-            if (in_array($ext, $allowedExts, true)) {
-                $regUsername = strtolower(trim($_POST['username'] ?? 'user'));
-                $safeFileName = 'avatar_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $regUsername) . '_' . time() . '.' . $ext;
-                $targetPath = $uploadDir . $safeFileName;
-                if (@move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
-                    $uploadedAvatar = $safeFileName;
-                }
-            }
-        }
-        $_POST['avatar_image'] = $uploadedAvatar;
+        $_POST['avatar_image'] = null;
 
         if ($regPassword !== $regConfirm) {
             $errorMessage = 'Konfirmasi kata sandi tidak cocok. Pastikan kedua kolom kata sandi sama.';
@@ -201,6 +182,7 @@ $maskedEmail = ($isWaiting2FA && !empty($pendingUser['email'])) ? mask_email($pe
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
+    <link rel="icon" type="image/png" href="assets/img/logo-antam-icon.png">
 </head>
 <body class="login-body">
 
@@ -210,25 +192,17 @@ $maskedEmail = ($isWaiting2FA && !empty($pendingUser['email'])) ? mask_email($pe
     <div class="ambient-glow glow-3"></div>
 
     <div class="login-wrapper">
-        <!-- Top Status Bar (Bersih & Rapi) -->
-        <div class="login-top-badge">
-            <span class="live-dot"></span>
-            <span>Smart Learning System</span>
-            <span class="badge-separator">•</span>
-            <span>PT ANTAM Tbk Pomalaa</span>
-        </div>
-
         <div class="login-header-block">
-            <!-- Pure Transparent Brand Logo with Ambient Aura -->
+            <!-- Logo Resmi PT ANTAM Tbk & Smart Learning Bersanding (Presisi & Rapi) -->
             <div class="login-logo-hero-container">
                 <div class="hero-logo-halo"></div>
-                <img src="assets/img/logo.png" alt="Smart Learning Logo PT ANTAM" class="hero-pure-logo">
+                <div class="hero-logos-pair">
+                    <img src="assets/img/logo-antam.png" alt="Logo PT ANTAM Tbk" class="hero-dual-logo hero-logo-antam">
+                    <div class="hero-logos-divider"></div>
+                    <img src="assets/img/logo.png" alt="Smart Learning Logo PT ANTAM" class="hero-dual-logo hero-logo-smart">
+                </div>
             </div>
             
-            <div class="brand-pill">
-                <i class="ph-fill ph-shield-check"></i>
-                PORTAL RESMI PEMBELAJARAN & K3 ESDM
-            </div>
             <h1 class="login-main-title">
                 Smart <span class="text-gradient-teal">Learning Portal</span>
             </h1>
@@ -349,7 +323,7 @@ $maskedEmail = ($isWaiting2FA && !empty($pendingUser['email'])) ? mask_email($pe
 
                     <button type="submit" class="btn-auth-submit" id="btn-submit-otp">
                         <i class="ph-bold ph-sign-in"></i>
-                        <span>Verifikasi & Masuk Dashboard</span>
+                        <span>Verifikasi & Masuk ke Menu Home</span>
                         <i class="ph-bold ph-arrow-right"></i>
                     </button>
                 </form>
@@ -430,59 +404,15 @@ $maskedEmail = ($isWaiting2FA && !empty($pendingUser['email'])) ? mask_email($pe
 
                     <button type="submit" class="btn-auth-submit" id="btn-submit-login">
                         <i class="ph-bold ph-sign-in"></i>
-                        <span>Masuk ke Dashboard</span>
+                        <span>Masuk ke Menu Home</span>
                         <i class="ph-bold ph-arrow-right"></i>
                     </button>
-
-                    <!-- Quick-Fill Demo Accounts Helper -->
-                    <div class="demo-accounts-helper">
-                        <div class="demo-helper-title">
-                            <i class="ph-fill ph-key"></i>
-                            <span>Akun Cepat Terdaftar (Klik untuk langsung mengisi):</span>
-                        </div>
-                        
-                        <div id="demo-chips-pegawai" class="demo-chips-row">
-                            <button type="button" class="demo-chip-btn" onclick="fillCredentials('egy', 'password123', 'pegawai')">
-                                <span class="demo-chip-av" style="background: #d4af37;">EP</span>
-                                <div class="demo-chip-info">
-                                    <strong>egy</strong>
-                                    <span>Operasional Tambang (HC)</span>
-                                </div>
-                            </button>
-                            
-                            <button type="button" class="demo-chip-btn" onclick="fillCredentials('budi', 'password123', 'pegawai')">
-                                <span class="demo-chip-av" style="background: #38bdf8;">BS</span>
-                                <div class="demo-chip-info">
-                                    <strong>budi</strong>
-                                    <span>Processing Plant (HC)</span>
-                                </div>
-                            </button>
-
-                            <button type="button" class="demo-chip-btn" onclick="fillCredentials('andi', 'password123', 'pegawai')">
-                                <span class="demo-chip-av" style="background: #a855f7;">AW</span>
-                                <div class="demo-chip-info">
-                                    <strong>andi</strong>
-                                    <span>Logistik Handak (HC)</span>
-                                </div>
-                            </button>
-                        </div>
-
-                        <div id="demo-chips-admin" class="demo-chips-row" style="display: none;">
-                            <button type="button" class="demo-chip-btn admin-demo-chip" onclick="fillCredentials('admin', 'admin123', 'admin')">
-                                <span class="demo-chip-av" style="background: #10b981;">LO</span>
-                                <div class="demo-chip-info">
-                                    <strong>admin</strong>
-                                    <span>Learning Ops Admin Biro (Human Capital)</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
                 </form>
             </div>
 
             <!-- PANEL 2: REGISTRATION FORM (Otomatis Sesuai Pilihan HC / Biro di Atas) -->
             <div id="panel-register" style="<?php echo $authMode !== 'register' ? 'display: none;' : ''; ?>">
-                <form method="POST" action="index.php" id="register-form" class="auth-form-body" enctype="multipart/form-data">
+                <form method="POST" action="index.php" id="register-form" class="auth-form-body">
                     <input type="hidden" name="action" value="register">
                     <input type="hidden" name="auth_mode" value="register">
                     <input type="hidden" name="portal" id="register-portal-input" value="<?php echo htmlspecialchars($prefillRole); ?>">
@@ -500,34 +430,6 @@ $maskedEmail = ($isWaiting2FA && !empty($pendingUser['email'])) ? mask_email($pe
                                 <?php echo $prefillRole === 'admin' ? 'Daftarkan akun konsol Biro Human Capital & Diklat' : 'Daftarkan akun pegawai Human Capital & operasional'; ?>
                             </p>
                         </div>
-                    </div>
-
-                    <!-- Avatar Photo Upload Box -->
-                    <div class="avatar-uploader-section">
-                        <div class="avatar-uploader-wrap">
-                            <div class="avatar-preview-circle" id="reg-avatar-circle" onclick="document.getElementById('reg-avatar-input').click()" title="Klik untuk memilih foto profil">
-                                <i class="ph-fill ph-user" id="reg-avatar-icon"></i>
-                                <img id="reg-avatar-img" src="" alt="Preview Foto" style="display: none;">
-                                <div class="avatar-upload-overlay">
-                                    <i class="ph-bold ph-camera"></i>
-                                </div>
-                            </div>
-                            <div class="avatar-uploader-text">
-                                <label class="form-label" style="margin-bottom: 2px;">
-                                    <i class="ph-fill ph-camera"></i> FOTO PROFIL (OPSIONAL)
-                                </label>
-                                <span class="text-xs text-muted block mb-2">Unggah foto resmi untuk tanda pengenal kartu kompetensi</span>
-                                <div class="flex items-center gap-2">
-                                    <button type="button" class="btn-select-photo" onclick="document.getElementById('reg-avatar-input').click()">
-                                        <i class="ph-bold ph-upload-simple"></i> Pilih Foto
-                                    </button>
-                                    <button type="button" class="btn-clear-photo" id="btn-clear-reg-avatar" onclick="clearRegisterAvatar()" style="display: none;">
-                                        <i class="ph-bold ph-x"></i> Hapus
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <input type="file" name="avatar" id="reg-avatar-input" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" onchange="previewRegisterAvatar(this)">
                     </div>
 
                     <div class="register-form-grid">
@@ -906,44 +808,7 @@ $maskedEmail = ($isWaiting2FA && !empty($pendingUser['email'])) ? mask_email($pe
             }
         }
 
-        // Avatar Photo Upload Preview for Registration
-        function previewRegisterAvatar(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Ukuran foto maksimal 5MB.');
-                    input.value = '';
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewImg = document.getElementById('reg-avatar-img');
-                    const previewIcon = document.getElementById('reg-avatar-icon');
-                    const clearBtn = document.getElementById('btn-clear-reg-avatar');
-                    if (previewImg && previewIcon) {
-                        previewImg.src = e.target.result;
-                        previewImg.style.display = 'block';
-                        previewIcon.style.display = 'none';
-                    }
-                    if (clearBtn) clearBtn.style.display = 'inline-flex';
-                };
-                reader.readAsDataURL(file);
-            }
-        }
 
-        function clearRegisterAvatar() {
-            const input = document.getElementById('reg-avatar-input');
-            const previewImg = document.getElementById('reg-avatar-img');
-            const previewIcon = document.getElementById('reg-avatar-icon');
-            const clearBtn = document.getElementById('btn-clear-reg-avatar');
-            if (input) input.value = '';
-            if (previewImg) {
-                previewImg.src = '';
-                previewImg.style.display = 'none';
-            }
-            if (previewIcon) previewIcon.style.display = 'block';
-            if (clearBtn) clearBtn.style.display = 'none';
-        }
     </script>
 </body>
 </html>

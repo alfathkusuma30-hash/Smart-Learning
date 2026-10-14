@@ -406,10 +406,20 @@ function openAssignTrainingModal(preselectedCourse = 'POP Level 1') {
             <div class="form-group mb-3">
                 <label class="text-xs font-semibold text-muted font-mono uppercase">Target Pegawai:</label>
                 <select id="assign-target" class="form-input mt-1">
-                    <option value="Egy Pratama (Operasional Tambang)">Egy Pratama (Operasional Tambang)</option>
-                    <option value="Budi Santoso (Processing Plant)">Budi Santoso (Processing Plant)</option>
-                    <option value="Andi Wijaya (Logistik & Gudang)">Andi Wijaya (Logistik & Gudang)</option>
-                    <option value="all">Seluruh Pegawai Site Pomalaa (Batch Penugasan)</option>
+                    ${(() => {
+                        const users = window.ALL_SYSTEM_USERS || [];
+                        const nonAdmin = users.filter(u => u.type !== 'Admin');
+                        if (nonAdmin.length > 0) {
+                            return nonAdmin.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.name)} (${escapeHtml(u.role || u.dept || u.username)})</option>`).join('') +
+                                   `<option value="all">Seluruh Pegawai Site Pomalaa (Batch Penugasan)</option>`;
+                        }
+                        return `
+                            <option value="egy">Egy Pratama (Operasional Tambang)</option>
+                            <option value="budi">Budi Santoso (Processing Plant)</option>
+                            <option value="alkusuma">ALFAT PANDU KUSUMA (Pegawai Site)</option>
+                            <option value="all">Seluruh Pegawai Site Pomalaa (Batch Penugasan)</option>
+                        `;
+                    })()}
                 </select>
             </div>
 
@@ -455,19 +465,16 @@ async function submitAssignTraining() {
     const deadlineEl = document.getElementById('assign-deadline');
 
     const course = courseEl ? courseEl.value : 'Pelatihan Master';
-    const target = targetEl ? targetEl.value : 'all';
+    const targetUsername = targetEl ? targetEl.value : '';
+    const selectedOptionText = (targetEl && targetEl.selectedOptions[0]) ? targetEl.selectedOptions[0].textContent : targetUsername;
     const deadline = deadlineEl ? deadlineEl.value : '7 Hari';
 
-    closeModal();
-
-    let targetUsername = 'egy';
-    if (target === 'all' || target.includes('Semua') || target.includes('Seluruh')) {
-        targetUsername = 'all';
-    } else if (target.includes('Budi')) {
-        targetUsername = 'budi';
-    } else if (target.includes('Andi')) {
-        targetUsername = 'andi';
+    if (!targetUsername) {
+        showToast('Pilih target pegawai yang valid.', 'warning');
+        return;
     }
+
+    closeModal();
 
     const fd = new FormData();
     fd.append('action', 'assign_activity');
@@ -479,7 +486,7 @@ async function submitAssignTraining() {
         const resp = await fetch('api.php', { method: 'POST', body: fd });
         const res = await resp.json();
         if (res.success) {
-            const targetLabel = targetUsername === 'all' ? 'Seluruh Pegawai Site Pomalaa' : target;
+            const targetLabel = targetUsername === 'all' ? 'Seluruh Pegawai Site Pomalaa' : selectedOptionText;
             showToast(`✅ Pelatihan "${course}" berhasil ditugaskan ke ${targetLabel}!`, 'success');
             setTimeout(() => { window.location.reload(); }, 1200);
         } else {
@@ -1582,7 +1589,7 @@ function openCertViewer(certName, regNo, score, issuedDate, validUntil, holderNa
         <div class="cert-print-wrap">
             <div class="cert-watermark">ANTAM</div>
             <div class="cert-logo-row">
-                <div class="cert-logo-hex">A</div>
+                <img src="assets/img/logo-antam-icon.png" alt="PT ANTAM" style="height: 38px; width: auto; object-fit: contain;">
                 <div style="text-align:left">
                     <div style="font-weight:700; font-size:0.8rem; color:#1e293b;">PT ANTAM (PERSERO) TBK</div>
                     <div style="font-size:0.6rem; color:#92734d;">Site Pomalaa — Human Capital & Corporate University</div>
@@ -2287,29 +2294,79 @@ function submitNewActivity() {
 // ==========================================
 let selectedAttendanceFile = null;
 
-function openCompleteActivityAttendanceModal(activityId, courseTitle) {
+function openCompleteActivityAttendanceModal(activityId, courseTitle, targetUsername = '', targetName = '') {
     selectedAttendanceFile = null;
     const cleanCourse = courseTitle || 'Pelatihan K3 & Operasional Site';
 
-    // Daftar karyawan site Pomalaa
-    const employees = [
-        { username: 'egy', name: 'Egy Pratama', role: 'Operasional Tambang Underground', nrp: 'ANTAM-08912' },
-        { username: 'budi', name: 'Budi Santoso', role: 'Processing Plant & Smelter', nrp: 'ANTAM-07844' },
-        { username: 'andi', name: 'Andi Wijaya', role: 'Logistik Handak & Gudang', nrp: 'ANTAM-06519' }
-    ];
+    const currentUname = (window.CURRENT_USERNAME || '').toLowerCase();
+    const userRole = window.CURRENT_USER_TYPE || 'User';
+    const isUserAdmin = (userRole === 'Admin');
 
-    const empCheckboxes = employees.map(emp => `
-        <label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 text-xs mb-1" style="background:#fff; border-color:#e2e8f0; display:flex; align-items:center; justify-content:space-between;">
-            <div class="flex items-center gap-2">
-                <input type="checkbox" name="attendance_attendees" value="${escapeHtml(emp.name)}" checked class="form-checkbox" style="width:16px; height:16px; accent-color:#0f766e;">
-                <div>
-                    <strong class="text-dark block" style="font-size:0.8rem;">${escapeHtml(emp.name)}</strong>
-                    <span class="text-muted font-mono" style="font-size:0.7rem;">${escapeHtml(emp.role)} · ${escapeHtml(emp.nrp)}</span>
+    // Validasi ketat hak akses: Pegawai biasa dilarang mengonfirmasi/upload absensi kegiatan milik pegawai lain
+    if (!isUserAdmin && targetUsername && targetUsername.toLowerCase() !== currentUname) {
+        showToast(`Akses Ditolak: Anda tidak memiliki izin untuk mengonfirmasi atau menambahkan berkas absensi pada kegiatan milik pegawai lain (${targetName || targetUsername}).`, 'error');
+        return;
+    }
+
+    const effectiveOwnerName = targetName || window.CURRENT_USER_NAME || 'Pegawai';
+    const effectiveOwnerUname = targetUsername || window.CURRENT_USERNAME || '';
+
+    let attendeeSectionHtml = '';
+    if (!isUserAdmin) {
+        // Mode Pegawai: Khusus untuk pegawai pemilik kegiatan sendiri
+        attendeeSectionHtml = `
+            <div class="form-group mb-3">
+                <label class="form-label font-semibold text-xs text-muted uppercase">2. Peserta Terverifikasi (Hak Milik Mandiri)</label>
+                <div class="p-2.5 border rounded flex items-center justify-between" style="background:#f8fafc; border-color:#e2e8f0;">
+                    <div class="flex items-center gap-2">
+                        <i class="ph-bold ph-user-circle text-accent" style="font-size:1.4rem;"></i>
+                        <div>
+                            <strong class="text-dark block" style="font-size:0.84rem;">${escapeHtml(effectiveOwnerName)}</strong>
+                            <span class="text-muted font-mono" style="font-size:0.72rem;">@${escapeHtml(effectiveOwnerUname)} · Pemilik Kegiatan</span>
+                        </div>
+                    </div>
+                    <span class="tag tag-teal text-xs font-mono"><i class="ph-bold ph-check"></i> Peserta Sah</span>
+                </div>
+                <input type="hidden" name="attendance_attendees" value="${escapeHtml(effectiveOwnerName)}">
+            </div>
+        `;
+    } else {
+        // Mode Admin / HC: Tampilkan daftar pegawai nyata dari sistem dengan pemilik kegiatan tercentang
+        const allUsers = (window.ALL_SYSTEM_USERS || []).filter(u => u.type !== 'Admin');
+        const empCheckboxes = allUsers.map(emp => {
+            const isOwner = (effectiveOwnerUname && emp.username.toLowerCase() === effectiveOwnerUname.toLowerCase())
+                         || (effectiveOwnerName && emp.name.toLowerCase() === effectiveOwnerName.toLowerCase());
+            return `
+                <label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 text-xs mb-1" style="background:#fff; border-color:#e2e8f0; display:flex; align-items:center; justify-content:space-between;">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" name="attendance_attendees" value="${escapeHtml(emp.name)}" ${isOwner ? 'checked' : ''} class="form-checkbox" style="width:16px; height:16px; accent-color:#0f766e;">
+                        <div>
+                            <strong class="text-dark block" style="font-size:0.8rem;">${escapeHtml(emp.name)} ${isOwner ? '<span class="tag tag-teal" style="font-size:0.65rem; padding:1px 5px;">Pemilik</span>' : ''}</strong>
+                            <span class="text-muted font-mono" style="font-size:0.7rem;">${escapeHtml(emp.role || emp.dept || emp.username)} · @${escapeHtml(emp.username)}</span>
+                        </div>
+                    </div>
+                    <span class="tag tag-teal text-xs">Hadir di Absensi</span>
+                </label>
+            `;
+        }).join('');
+
+        attendeeSectionHtml = `
+            <div class="form-group mb-3">
+                <div class="flex items-center justify-between mb-1">
+                    <label class="form-label font-semibold text-xs text-muted uppercase">2. Rekap Peserta yang Tercatat Hadir di Absensi (HC)</label>
+                    <span class="text-xs text-accent cursor-pointer" onclick="toggleSelectAllAttendance(this)">Pilih Semua</span>
+                </div>
+                <div class="attendance-emp-list p-2 border rounded" style="background:#f8fafc; max-height:140px; overflow-y:auto;">
+                    ${empCheckboxes}
+                </div>
+
+                <div class="mt-2">
+                    <label class="text-xs text-muted font-semibold block mb-1">+ Tambah Nama Peserta Lapangan Lainnya (1 nama per baris):</label>
+                    <textarea id="attend-extra-names" class="form-input text-xs" rows="2" placeholder="Contoh:&#10;Rian Setiawan&#10;Dewi Sartika"></textarea>
                 </div>
             </div>
-            <span class="tag tag-teal text-xs">Hadir di Absensi</span>
-        </label>
-    `).join('');
+        `;
+    }
 
     const bodyHtml = `
         <div class="complete-act-modal-body">
@@ -2318,13 +2375,14 @@ function openCompleteActivityAttendanceModal(activityId, courseTitle) {
                     <i class="ph-fill ph-seal-check" style="font-size:1.15rem;"></i>
                     <span>Kebijakan Human Capital (HC) PT ANTAM Tbk Pomalaa</span>
                 </div>
-                Peserta pelatihan tidak otomatis mendapatkan sertifikat. Kelulusan dan arsip resmi diverifikasi melalui <strong>Berkas Absensi Pelatihan</strong> yang diunggah oleh pihak HC. Mohon upload file absensi kegiatan ini agar pihak Biro dan Admin dapat langsung meninjau &amp; mengunduh berkasnya.
+                Peserta pelatihan tidak otomatis mendapatkan sertifikat. Kelulusan dan arsip resmi diverifikasi melalui <strong>Berkas Absensi Pelatihan</strong> yang diunggah oleh pihak HC atau pegawai bersangkutan. Mohon upload file absensi kegiatan ini agar pihak Biro dan Admin dapat langsung meninjau &amp; mengunduh berkasnya.
             </div>
 
             <div class="p-2.5 mb-3 bg-gray-50 border rounded text-xs flex items-center justify-between flex-wrap gap-2" style="background:#f8fafc; border-color:#e2e8f0;">
                 <div>
                     <span class="text-muted block text-xs">Nama Kegiatan Pelatihan:</span>
                     <strong class="text-dark text-sm">${escapeHtml(cleanCourse)}</strong>
+                    <div class="text-xs text-muted font-mono mt-0.5">Pemilik: <strong>${escapeHtml(effectiveOwnerName)}</strong> (@${escapeHtml(effectiveOwnerUname)})</div>
                 </div>
                 <span class="tag tag-teal text-xs font-mono"><i class="ph-fill ph-shield-check"></i> Verifikasi HC Pomalaa</span>
             </div>
@@ -2344,20 +2402,7 @@ function openCompleteActivityAttendanceModal(activityId, courseTitle) {
             </div>
 
             <!-- Daftar Karyawan yang Mengikuti Kegiatan -->
-            <div class="form-group mb-3">
-                <div class="flex items-center justify-between mb-1">
-                    <label class="form-label font-semibold text-xs text-muted uppercase">2. Rekap Peserta yang Tercatat Hadir di Absensi</label>
-                    <span class="text-xs text-accent cursor-pointer" onclick="toggleSelectAllAttendance(this)">Pilih Semua</span>
-                </div>
-                <div class="attendance-emp-list p-2 border rounded" style="background:#f8fafc; max-height:140px; overflow-y:auto;">
-                    ${empCheckboxes}
-                </div>
-
-                <div class="mt-2">
-                    <label class="text-xs text-muted font-semibold block mb-1">+ Tambah Nama Peserta Lapangan Lainnya (1 nama per baris):</label>
-                    <textarea id="attend-extra-names" class="form-input text-xs" rows="2" placeholder="Contoh:&#10;Rian Setiawan&#10;Dewi Sartika"></textarea>
-                </div>
-            </div>
+            ${attendeeSectionHtml}
         </div>
     `;
 
@@ -2410,7 +2455,7 @@ function submitCompleteActivityAttendance(activityId, courseTitle) {
         return;
     }
 
-    const checked = Array.from(document.querySelectorAll('input[name="attendance_attendees"]:checked')).map(cb => cb.value.trim());
+    const checked = Array.from(document.querySelectorAll('input[name="attendance_attendees"]:checked, input[type="hidden"][name="attendance_attendees"]')).map(cb => cb.value.trim());
     const extraEl = document.getElementById('attend-extra-names');
     if (extraEl && extraEl.value.trim()) {
         const extraNames = extraEl.value.split('\n').map(n => n.trim()).filter(n => n.length > 0);

@@ -18,11 +18,11 @@ if ($activeUser) {
     $_SESSION['user_type'] = $activeUser['type'];
 }
 
-$page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+$page = isset($_GET['page']) ? $_GET['page'] : 'home';
 $allowed_pages = ['home', 'dashboard', 'learning_bank', 'my_learning', 'notifikasi', 'admin_panel', 'reports', 'settings'];
 
 if (!in_array($page, $allowed_pages)) {
-    $page = 'dashboard';
+    $page = 'home';
 }
 
 // Count pending requests or notifications for badge
@@ -53,6 +53,7 @@ if ($_SESSION['user_type'] === 'Admin') {
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
+    <link rel="icon" type="image/png" href="assets/img/logo-antam-icon.png">
 </head>
 <body class="os-body">
 
@@ -64,16 +65,27 @@ if ($_SESSION['user_type'] === 'Admin') {
         <!-- Topbar (SunFish / ANTAM WorkPlaze Style) -->
         <header class="topbar">
             <div class="topbar-left">
-                <a href="?page=dashboard" class="brand-link" title="Smart Learning — Portal Pembelajaran & K3">
-                    <div class="brand-logo-emblem" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; overflow: hidden; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <img src="assets/img/logo-icon.png" alt="Smart Learning Emblem" class="brand-emblem-img" width="22" height="22" style="width: 22px; height: 22px; max-width: 22px; max-height: 22px; object-fit: contain; display: block;">
+                <a href="?page=home" class="brand-link" title="PT ANTAM Tbk - Smart Learning Portal">
+                    <!-- Logo PT ANTAM Tbk -->
+                    <div class="topbar-antam-badge">
+                        <img src="assets/img/logo-antam.png" alt="Logo PT ANTAM Tbk" class="topbar-antam-logo">
                     </div>
-                    <div class="brand-text-block">
-                        <div class="brand-title-row">
-                            <span class="brand-title">Smart Learning</span>
-                            <span class="brand-k3-badge">PORTAL</span>
+
+                    <!-- Vertical Divider Bersanding -->
+                    <div class="topbar-brand-divider"></div>
+
+                    <!-- Logo & Brand Smart Learning -->
+                    <div class="brand-smart-learning-unit">
+                        <div class="brand-logo-emblem">
+                            <img src="assets/img/logo-icon.png" alt="Smart Learning Emblem" class="brand-emblem-img">
                         </div>
-                        <span class="brand-subtitle">Mining & Safety Academy</span>
+                        <div class="brand-text-block">
+                            <div class="brand-title-row">
+                                <span class="brand-title">Smart Learning</span>
+                                <span class="brand-k3-badge">PORTAL</span>
+                            </div>
+                            <span class="brand-subtitle">Mining & Safety Academy</span>
+                        </div>
                     </div>
                 </a>
 
@@ -143,11 +155,11 @@ if ($_SESSION['user_type'] === 'Admin') {
                     </a>
 
                     <!-- 2. Dashboard -->
-                    <a href="?page=dashboard" class="dock-item <?php echo $page == 'dashboard' ? 'active' : ''; ?>" title="Personal Dashboard">
+                    <a href="?page=dashboard" class="dock-item <?php echo $page == 'dashboard' ? 'active' : ''; ?>" title="<?php echo $_SESSION['user_type'] === 'Admin' ? 'Executive Dashboard Monitoring' : 'Personal Dashboard'; ?>">
                         <div class="dock-icon">
-                            <i class="ph-bold ph-user"></i>
+                            <i class="ph-bold ph-chart-pie-slice"></i>
                         </div>
-                        <span class="dock-label">Profile</span>
+                        <span class="dock-label">Dashboard</span>
                     </a>
                     
                     <!-- 3. Learning Bank (Catalog) -->
@@ -225,7 +237,7 @@ if ($_SESSION['user_type'] === 'Admin') {
                                 <span class="breadcrumb-sep">&gt;</span>
                                 <span class="breadcrumb-current"><?php 
                                     if($page == 'home') echo "Portal Overview";
-                                    elseif($page == 'dashboard') echo "Personal Dashboard";
+                                    elseif($page == 'dashboard') echo ($_SESSION['user_type'] === 'Admin') ? "Executive Dashboard Monitoring" : "Personal Dashboard";
                                     elseif($page == 'learning_bank') echo "Manage Training Course";
                                     elseif($page == 'my_learning') echo "My Training Track";
                                     elseif($page == 'notifikasi') echo "Notifications & Alert Center";
@@ -317,6 +329,8 @@ if ($_SESSION['user_type'] === 'Admin') {
     <script>
         window.CURRENT_USER_TYPE = <?php echo json_encode($_SESSION['user_type'] ?? 'User'); ?>;
         window.CURRENT_USERNAME = <?php echo json_encode($_SESSION['username'] ?? ''); ?>;
+        window.CURRENT_USER_NAME = <?php echo json_encode($_SESSION['user_name'] ?? ''); ?>;
+        window.ALL_SYSTEM_USERS = <?php echo json_encode(array_values(get_all_users())); ?>;
         window.INITIAL_PENDING_ACTIVITIES = <?php echo json_encode(($_SESSION['user_type'] === 'Admin') ? get_activities(null, 'menunggu_konfirmasi') : []); ?>;
         window.USER_CONTACTS = <?php
             $uList = get_all_users();
