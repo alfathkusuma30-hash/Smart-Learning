@@ -1,10 +1,36 @@
-# Ignored uploaded files
+# CodeIgniter 4 Writable Directory
+/writable/cache/*
+!/writable/cache/index.html
+!/writable/cache/.gitkeep
+/writable/debugbar/*
+!/writable/debugbar/index.html
+!/writable/debugbar/.gitkeep
+/writable/logs/*
+!/writable/logs/index.html
+!/writable/logs/.gitkeep
+/writable/session/*
+!/writable/session/index.html
+!/writable/session/.gitkeep
+/writable/uploads/*
+!/writable/uploads/index.html
+!/writable/uploads/.gitkeep
+
+# Composer vendor
+vendor/
+
+# Binaries & Executables
+cloudflared.exe
+*.exe
+
+# Environment & Credentials
+.env
+includes/mail_config.php
+
+# User uploads
 uploads/*
-!uploads/templates/
-uploads/templates/*
-!uploads/attendance/
-uploads/attendance/*
-!uploads/**/.gitkeep
+!uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
 
 # IDE / System
 .vscode/

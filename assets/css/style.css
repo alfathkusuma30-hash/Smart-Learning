@@ -248,12 +248,55 @@ a {
    REDESIGNED LOGIN PAGE (INDEX.PHP)
    ================================== */
 .login-body {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
     padding: 2.5rem 1.5rem;
-    background: #f4f6f9;
+    background: #0f172a;
+    overflow-x: hidden;
+}
+
+/* Aesthetic Background Container with Subtle Blur */
+.login-bg-backdrop {
+    position: fixed;
+    top: -24px;
+    left: -24px;
+    right: -24px;
+    bottom: -24px;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.login-bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../img/antam-pomalaa-bg.jpg');
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    /* Sedikit blur (subtle blur) agar estetik: gedung ANTAM Pomalaa tetap tampak indah & berkelas */
+    filter: blur(4px) brightness(0.88) saturate(1.1);
+    transform: scale(1.05); /* Mencegah vignette blur di tepi layar */
+}
+
+.login-bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(15, 23, 42, 0.40) 0%,
+        rgba(15, 118, 110, 0.28) 45%,
+        rgba(15, 23, 42, 0.68) 100%
+    );
 }
 
 .login-wrapper {
@@ -327,8 +370,14 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 1.75rem;
-    transform: translateX(-16px);
+    gap: 1.5rem;
+    padding: 0.6rem 1.6rem;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: var(--radius-full);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .hero-dual-logo {
@@ -420,12 +469,14 @@ a {
     letter-spacing: -0.02em;
     margin-bottom: 0.5rem;
     line-height: 1.15;
-    color: #0f172a;
+    color: #ffffff;
+    text-shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
 }
 
 .login-main-subtitle {
     font-size: 0.95rem;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
     max-width: 800px;
     line-height: 1.55;
 }
@@ -435,11 +486,13 @@ a {
     display: flex;
     gap: 0.5rem;
     padding: 0.35rem;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: var(--radius-full);
     margin-bottom: 2rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.14);
     animation: fadeInUp 0.7s ease-out 0.2s both;
 }
 
@@ -819,10 +872,20 @@ a {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 3rem;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 2rem;
+    padding: 0.45rem 1.4rem;
+    background: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: var(--radius-full);
     animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+.login-footer-bar .text-accent {
+    color: #2dd4bf !important;
 }
 .footer-item {
     display: flex;
@@ -2623,12 +2686,11 @@ a {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
 }
 .stat-card-title {
-    font-size: 0.725rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.75rem;
+    color: #475569;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.6rem;
 }
 .stat-value {
     font-size: 2.25rem;
@@ -3550,10 +3612,12 @@ a {
 .login-card-container {
     width: 100%;
     max-width: 580px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
     border-radius: var(--radius-lg);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), 0 0 1px rgba(255, 255, 255, 0.8) inset;
     padding: 2.25rem;
     margin-bottom: 2rem;
     animation: fadeInUp 0.5s ease-out;
@@ -7866,6 +7930,78 @@ body.pen-mode-active * {
         align-items: flex-start;
     }
 }
+
+/* ==============================================================
+   KALENDER ESTIMASI WAKTU & JADWAL PELATIHAN (SIMPLE & CLEAN STRIP)
+   PT ANTAM Tbk — WorkPlaze / SunFish HR Minimal Style
+   ============================================================== */
+.act-simple-est-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-top: 0.15rem;
+    margin-bottom: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.act-simple-est-strip:hover {
+    border-color: #cbd5e1;
+    background: #ffffff;
+}
+
+.act-simple-pill {
+    background: #0f766e;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 12px;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.act-simple-edit-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.act-simple-edit-btn:hover {
+    color: #0f766e;
+    background: #f0fdfa;
+}
+
+.act-simple-custom-hours {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: #f0fdfa;
+    border: 1px dashed #99f6e4;
+    border-radius: 6px;
+    margin-top: -0.5rem;
+    margin-bottom: 0.85rem;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 
 
 

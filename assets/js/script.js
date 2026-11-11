@@ -2136,30 +2136,187 @@ function markAllAsRead() {
 }
 
 // ==========================================
-// K. ALUR KEGIATAN BARU PEGAWAI: MULTI-STEP WIZARD (STEP 1: INFO -> STEP 2: TEMPLATE -> STEP 3: NOTIFIKASI)
+// K. ALUR KEGIATAN BARU PEGAWAI: KALENDER & ESTIMASI WAKTU INTERAKTIF
 // ==========================================
+
+const INDO_MONTH_NAMES_LIST = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const INDO_MONTH_SHORT_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const INDO_DAYS_LIST = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+function getSystemDateIso() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function parseDateToIso(str) {
+    if (!str) return getSystemDateIso();
+    str = String(str).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        return str.substring(0, 10);
+    }
+    const mMatch = str.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+    if (mMatch) {
+        const d = String(mMatch[1]).padStart(2, '0');
+        const mStr = mMatch[2].toLowerCase();
+        const y = mMatch[3];
+        const monthMap = {
+            'jan': '01', 'januari': '01', 'january': '01',
+            'feb': '02', 'februari': '02', 'february': '02',
+            'mar': '03', 'maret': '03', 'march': '03',
+            'apr': '04', 'april': '04',
+            'mei': '05', 'may': '05',
+            'jun': '06', 'juni': '06', 'june': '06',
+            'jul': '07', 'juli': '07', 'july': '07',
+            'agu': '08', 'agustus': '08', 'aug': '08', 'august': '08',
+            'sep': '09', 'september': '09',
+            'okt': '10', 'oktober': '10', 'oct': '10', 'october': '10',
+            'nov': '11', 'november': '11',
+            'des': '12', 'desember': '12', 'dec': '12', 'december': '12'
+        };
+        const m = monthMap[mStr] || '01';
+        return `${y}-${m}-${d}`;
+    }
+    const t = new Date(str);
+    if (!isNaN(t.getTime())) {
+        const y = t.getFullYear();
+        const m = String(t.getMonth() + 1).padStart(2, '0');
+        const d = String(t.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    return getSystemDateIso();
+}
+
+function formatIsoToIndoDate(isoStr) {
+    if (!isoStr) return '';
+    const parts = isoStr.split('-');
+    if (parts.length === 3) {
+        const d = parseInt(parts[2], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parts[0];
+        return `${d} ${INDO_MONTH_SHORT_LIST[m] || ''} ${y}`;
+    }
+    return isoStr;
+}
+
+function formatIsoToIndoFullDate(isoStr) {
+    if (!isoStr) return '';
+    const parts = isoStr.split('-');
+    if (parts.length === 3) {
+        const d = parseInt(parts[2], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[0], 10);
+        const dt = new Date(y, m, d);
+        const dayName = INDO_DAYS_LIST[dt.getDay()] || '';
+        return `${dayName}, ${d} ${INDO_MONTH_SHORT_LIST[m] || ''} ${y}`;
+    }
+    return isoStr;
+}
+
+function addDaysToIsoDate(isoStr, numDays) {
+    const parts = isoStr.split('-');
+    const dt = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    dt.setDate(dt.getDate() + numDays);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const d = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function calculateDaysBetween(iso1, iso2) {
+    if (!iso1 || !iso2) return 1;
+    const p1 = iso1.split('-');
+    const p2 = iso2.split('-');
+    const d1 = new Date(parseInt(p1[0], 10), parseInt(p1[1], 10) - 1, parseInt(p1[2], 10));
+    const d2 = new Date(parseInt(p2[0], 10), parseInt(p2[1], 10) - 1, parseInt(p2[2], 10));
+    const diff = Math.round((d2 - d1) / 86400000);
+    return Math.max(1, diff + 1);
+}
+
+function getDayNameFromIso(isoStr) {
+    if (!isoStr) return '';
+    const parts = isoStr.split('-');
+    if (parts.length === 3) {
+        const d = parseInt(parts[2], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[0], 10);
+        const dt = new Date(y, m, d);
+        return INDO_DAYS_LIST[dt.getDay()] || '';
+    }
+    return '';
+}
+
+function getWeekendDaysCount(startIso, endIso) {
+    if (!startIso || !endIso) return 0;
+    const p1 = startIso.split('-');
+    const p2 = endIso.split('-');
+    const d1 = new Date(parseInt(p1[0], 10), parseInt(p1[1], 10) - 1, parseInt(p1[2], 10));
+    const d2 = new Date(parseInt(p2[0], 10), parseInt(p2[1], 10) - 1, parseInt(p2[2], 10));
+    let count = 0;
+    const cur = new Date(d1);
+    while (cur <= d2) {
+        const day = cur.getDay();
+        if (day === 0 || day === 6) count++;
+        cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+}
+
+// Global Calendar State for New Activity Modal
+let newActCalState = {
+    startDate: '',
+    endDate: '',
+    viewMonth: 0,
+    viewYear: 2026,
+    pickingStep: 1, // 1: set start, 2: set end
+    customHours: null,
+    isManualHours: false,
+    isOpen: true
+};
+
 let newActWizard = {
     step: 1,
     title: '',
     category: 'K3 & Keselamatan Tambang',
     type: 'Wajib K3',
     duration: '2 Hari (16 Jam)',
-    deadline: '26 Agu 2026',
+    deadline: '',
     notes: '',
     templateFile: null,
-    templateChoice: 'default' // 'default' | 'custom'
+    templateChoice: 'default'
 };
 
-function openNewActivityModal() {
-    renderNewActivityForm('', 'K3 & Keselamatan Tambang', 'Wajib K3', '2 Hari (16 Jam)', '26 Agu 2026', '');
+function openNewActivityModal(presetStartDate = '') {
+    const defaultStart = presetStartDate ? parseDateToIso(presetStartDate) : getSystemDateIso();
+    const defaultEnd = addDaysToIsoDate(defaultStart, 1);
+    const defaultDeadline = formatIsoToIndoDate(defaultEnd);
+    renderNewActivityForm('', 'K3 & Keselamatan Tambang', 'Wajib K3', '2 Hari (16 Jam)', defaultDeadline, '', defaultStart);
 }
 
 function openNewActivityModalWithPreset(title, type, category, duration, level) {
     const defaultNotes = `Pengajuan dari rekomendasi LNA: ${title || ''} (${level || 'Basic'}). Diperlukan untuk peningkatan kompetensi operasional site Pomalaa.`;
-    renderNewActivityForm(title || '', category || 'K3 & Keselamatan Tambang', type || 'Wajib K3', duration || '2 Hari (16 Jam)', '26 Agu 2026', defaultNotes);
+    const defaultStart = getSystemDateIso();
+    
+    let days = 2;
+    const dMatch = (duration || '').match(/(\d+)\s*Hari/i);
+    if (dMatch) days = parseInt(dMatch[1], 10);
+    const defaultEnd = addDaysToIsoDate(defaultStart, Math.max(0, days - 1));
+    const defaultDeadline = formatIsoToIndoDate(defaultEnd);
+
+    renderNewActivityForm(
+        title || '',
+        category || 'K3 & Keselamatan Tambang',
+        type || 'Wajib K3',
+        duration || '2 Hari (16 Jam)',
+        defaultDeadline,
+        defaultNotes,
+        defaultStart
+    );
 }
 
-function renderNewActivityForm(initialTitle, initialCat, initialType, initialDur, initialDeadline, initialNotes) {
+function renderNewActivityForm(initialTitle, initialCat, initialType, initialDur, initialDeadline, initialNotes, initialStartDate = '') {
     const bodyHtml = `
         <form id="form-new-act" onsubmit="handleNewActivitySubmit(event)" class="form-new-act">
             <div class="p-3 mb-3 border rounded text-xs" style="background:#f0fdf4; border-color:#86efac; color:#166534; line-height:1.5;">
@@ -2167,7 +2324,7 @@ function renderNewActivityForm(initialTitle, initialCat, initialType, initialDur
                     <i class="ph-fill ph-shield-check"></i>
                     <span>Ketentuan Human Capital (HC) PT ANTAM • Site Pomalaa</span>
                 </div>
-                Masukkan rincian usulan kegiatan pembelajaran. Verifikasi kehadiran peserta akan dilakukan melalui unggah berkas absensi resmi oleh pihak HC setelah kegiatan terlaksana.
+                Masukkan usulan kegiatan pembelajaran. Estimasi waktu & rentang tanggal pelaksanaan dapat ditentukan secara interaktif melalui kalender di bawah ini.
             </div>
 
             <div class="form-group mb-3">
@@ -2197,17 +2354,50 @@ function renderNewActivityForm(initialTitle, initialCat, initialType, initialDur
                 </div>
             </div>
 
-            <div class="form-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <!-- INPUT TANGGAL PELAKSANAAN (SIMPLE & CLEAN) -->
+            <div class="form-grid mb-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
-                    <label class="text-xs font-semibold text-muted font-mono uppercase">Estimasi Durasi *</label>
-                    <input type="text" id="wiz-act-duration" class="form-input mt-1" value="${escapeHtml(initialDur)}" placeholder="cth. 2 Hari (16 Jam)">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-muted font-mono uppercase">Tanggal Mulai *</label>
+                        <span class="text-xs text-accent font-semibold" id="text-hint-start-date">-</span>
+                    </div>
+                    <input type="date" id="wiz-act-start-date" class="form-input mt-1" onchange="handleNewActDateInputChange()">
                 </div>
 
                 <div class="form-group">
-                    <label class="text-xs font-semibold text-muted font-mono uppercase">Target Tanggal Selesai *</label>
-                    <input type="text" id="wiz-act-deadline" class="form-input mt-1" value="${escapeHtml(initialDeadline)}" placeholder="cth. 26 Agu 2026">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-muted font-mono uppercase">Target Selesai / Deadline *</label>
+                        <span class="text-xs text-accent font-semibold" id="text-hint-end-date">-</span>
+                    </div>
+                    <input type="date" id="wiz-act-end-date" class="form-input mt-1" onchange="handleNewActDateInputChange()">
                 </div>
             </div>
+
+            <!-- Estimasi Durasi Ringkas (1 Baris Simpel & Rapi) -->
+            <div class="act-simple-est-strip mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="act-simple-pill" id="act-summary-duration-text">2 Hari (16 Jam)</span>
+                    <span class="text-xs text-muted" id="act-summary-range-text">16 Okt 2026 s/d 17 Okt 2026</span>
+                    <button type="button" class="act-simple-edit-btn" onclick="toggleNewActCustomHours()" title="Ubah Jam Manual">
+                        <i class="ph-bold ph-pencil-simple"></i>
+                    </button>
+                </div>
+                <span class="text-xs text-muted font-mono">Standar: 8 Jam/Hari</span>
+            </div>
+
+            <!-- Drawer Jam Manual (Hanya Muncul Jika Diklik) -->
+            <div class="act-simple-custom-hours" id="act-custom-hours-wrap" style="display: none;">
+                <span class="text-xs text-muted font-mono">JAM MANUAL:</span>
+                <input type="number" id="act-manual-hours-input" class="form-input" style="width: 75px; padding: 0.2rem 0.4rem; font-size: 0.75rem; height: auto;" min="1" max="500" placeholder="Jam" oninput="handleManualHoursInput(this.value)">
+                <span class="text-xs text-muted">Jam Pelatihan Efektif</span>
+                <button type="button" class="text-xs text-accent underline ml-auto cursor-pointer" onclick="resetActHoursToStandard()">
+                    Reset ke 8 Jam/Hari
+                </button>
+            </div>
+
+            <!-- Synchronized inputs for backend API compatibility -->
+            <input type="hidden" id="wiz-act-duration" value="${escapeHtml(initialDur)}">
+            <input type="hidden" id="wiz-act-deadline" value="${escapeHtml(initialDeadline)}">
 
             <div class="form-group mb-3">
                 <label class="text-xs font-semibold text-muted font-mono uppercase">Alasan Kebutuhan Pelatihan</label>
@@ -2224,7 +2414,150 @@ function renderNewActivityForm(initialTitle, initialCat, initialType, initialDur
         </form>
     `;
 
-    openModal('Ajukan Kegiatan Pembelajaran Baru', bodyHtml, '', 'ph-fill ph-plus-circle');
+    openModal('Ajukan Kegiatan Pembelajaran Baru', bodyHtml, '', 'ph-fill ph-plus-circle', false);
+
+    setTimeout(() => {
+        initNewActCalendar(initialStartDate, initialDeadline, initialDur);
+    }, 60);
+}
+
+function initNewActCalendar(initialStartDate, initialDeadline, initialDur) {
+    const startIso = initialStartDate ? parseDateToIso(initialStartDate) : getSystemDateIso();
+    
+    let days = 2;
+    let hours = 16;
+    const dMatch = (initialDur || '').match(/(\d+)\s*Hari/i);
+    if (dMatch) days = parseInt(dMatch[1], 10);
+    const hMatch = (initialDur || '').match(/(\d+)\s*Jam/i);
+    if (hMatch) hours = parseInt(hMatch[1], 10);
+
+    let endIso = addDaysToIsoDate(startIso, Math.max(0, days - 1));
+    if (initialDeadline) {
+        const parsedDead = parseDateToIso(initialDeadline);
+        if (parsedDead >= startIso) {
+            endIso = parsedDead;
+            days = calculateDaysBetween(startIso, endIso);
+            hours = days * 8;
+        }
+    }
+
+    newActCalState.startDate = startIso;
+    newActCalState.endDate = endIso;
+    newActCalState.customHours = hours;
+    newActCalState.isManualHours = (hours !== days * 8);
+
+    updateNewActScheduleOutputs();
+}
+
+function handleNewActDateInputChange() {
+    const startInput = document.getElementById('wiz-act-start-date');
+    const endInput = document.getElementById('wiz-act-end-date');
+    if (!startInput || !endInput) return;
+
+    let sVal = startInput.value;
+    let eVal = endInput.value;
+
+    if (sVal) {
+        newActCalState.startDate = sVal;
+    }
+    if (eVal) {
+        if (sVal && eVal < sVal) {
+            eVal = sVal;
+            endInput.value = sVal;
+        }
+        newActCalState.endDate = eVal;
+    } else if (sVal) {
+        newActCalState.endDate = sVal;
+    }
+
+    const days = calculateDaysBetween(newActCalState.startDate, newActCalState.endDate);
+    if (!newActCalState.isManualHours) {
+        newActCalState.customHours = days * 8;
+    }
+
+    updateNewActScheduleOutputs();
+}
+
+function updateNewActScheduleOutputs() {
+    const startInput = document.getElementById('wiz-act-start-date');
+    const endInput = document.getElementById('wiz-act-end-date');
+    const startHint = document.getElementById('text-hint-start-date');
+    const endHint = document.getElementById('text-hint-end-date');
+    const durInput = document.getElementById('wiz-act-duration');
+    const deadInput = document.getElementById('wiz-act-deadline');
+    const badgeText = document.getElementById('act-summary-duration-text');
+    const rangeText = document.getElementById('act-summary-range-text');
+    const manualHoursInput = document.getElementById('act-manual-hours-input');
+
+    if (startInput) startInput.value = newActCalState.startDate;
+    if (endInput) endInput.value = newActCalState.endDate;
+
+    if (startHint) startHint.textContent = formatIsoToIndoFullDate(newActCalState.startDate);
+    if (endHint) endHint.textContent = formatIsoToIndoFullDate(newActCalState.endDate);
+
+    const days = calculateDaysBetween(newActCalState.startDate, newActCalState.endDate);
+    const hours = (newActCalState.customHours !== null && !isNaN(newActCalState.customHours)) 
+                  ? newActCalState.customHours 
+                  : (days * 8);
+
+    const durString = `${days} Hari (${hours} Jam)`;
+    const deadString = formatIsoToIndoDate(newActCalState.endDate);
+
+    if (durInput) durInput.value = durString;
+    if (deadInput) deadInput.value = deadString;
+
+    if (badgeText) badgeText.textContent = durString;
+
+    if (rangeText) {
+        if (newActCalState.startDate === newActCalState.endDate) {
+            rangeText.textContent = `${formatIsoToIndoDate(newActCalState.startDate)} (1 Hari Pelatihan)`;
+        } else {
+            rangeText.textContent = `${formatIsoToIndoDate(newActCalState.startDate)} s/d ${formatIsoToIndoDate(newActCalState.endDate)}`;
+        }
+    }
+
+    if (manualHoursInput) {
+        manualHoursInput.value = hours;
+    }
+
+    if (window.newActWizard) {
+        window.newActWizard.duration = durString;
+        window.newActWizard.deadline = deadString;
+    }
+}
+
+function toggleNewActCustomHours() {
+    const wrap = document.getElementById('act-custom-hours-wrap');
+    if (!wrap) return;
+    if (wrap.style.display === 'none' || !wrap.style.display) {
+        wrap.style.display = 'flex';
+        const input = document.getElementById('act-manual-hours-input');
+        if (input) input.focus();
+    } else {
+        wrap.style.display = 'none';
+    }
+}
+
+function handleManualHoursInput(val) {
+    const num = parseInt(val, 10);
+    const days = calculateDaysBetween(newActCalState.startDate, newActCalState.endDate);
+    if (!isNaN(num) && num > 0) {
+        newActCalState.customHours = num;
+        newActCalState.isManualHours = (num !== days * 8);
+    } else {
+        newActCalState.customHours = days * 8;
+        newActCalState.isManualHours = false;
+    }
+    updateNewActScheduleOutputs();
+}
+
+function resetActHoursToStandard() {
+    const days = calculateDaysBetween(newActCalState.startDate, newActCalState.endDate);
+    newActCalState.customHours = days * 8;
+    newActCalState.isManualHours = false;
+    const wrap = document.getElementById('act-custom-hours-wrap');
+    if (wrap) wrap.style.display = 'none';
+    updateNewActScheduleOutputs();
 }
 
 async function handleNewActivitySubmit(e) {
@@ -2254,8 +2587,16 @@ async function handleNewActivitySubmit(e) {
     fd.append('category', catEl ? catEl.value : 'Operasional Tambang');
     fd.append('type', typeEl ? typeEl.value : 'Wajib K3');
     fd.append('duration', durEl ? durEl.value.trim() : '2 Hari (16 Jam)');
-    fd.append('deadline', deadEl ? deadEl.value.trim() : '26 Agu 2026');
-    fd.append('notes', notesEl ? notesEl.value.trim() : '');
+    fd.append('deadline', deadEl ? deadEl.value.trim() : formatIsoToIndoDate(getSystemDateIso()));
+
+    let finalNotes = notesEl ? notesEl.value.trim() : '';
+    if (newActCalState.startDate && newActCalState.endDate) {
+        const scheduleNote = `[Jadwal Pelatihan: ${formatIsoToIndoDate(newActCalState.startDate)} s/d ${formatIsoToIndoDate(newActCalState.endDate)} · ${durEl ? durEl.value.trim() : ''}]`;
+        if (!finalNotes.includes('Jadwal Pelatihan:')) {
+            finalNotes = finalNotes ? `${finalNotes}\n\n${scheduleNote}` : scheduleNote;
+        }
+    }
+    fd.append('notes', finalNotes);
 
     try {
         const resp = await fetch('api.php', { method: 'POST', body: fd });
@@ -2313,25 +2654,12 @@ function openCompleteActivityAttendanceModal(activityId, courseTitle, targetUser
 
     let attendeeSectionHtml = '';
     if (!isUserAdmin) {
-        // Mode Pegawai: Khusus untuk pegawai pemilik kegiatan sendiri
+        // Mode Pegawai: Otomatis tersimpan untuk akun sendiri tanpa kartu tambahan yang ramai
         attendeeSectionHtml = `
-            <div class="form-group mb-3">
-                <label class="form-label font-semibold text-xs text-muted uppercase">2. Peserta Terverifikasi (Hak Milik Mandiri)</label>
-                <div class="p-2.5 border rounded flex items-center justify-between" style="background:#f8fafc; border-color:#e2e8f0;">
-                    <div class="flex items-center gap-2">
-                        <i class="ph-bold ph-user-circle text-accent" style="font-size:1.4rem;"></i>
-                        <div>
-                            <strong class="text-dark block" style="font-size:0.84rem;">${escapeHtml(effectiveOwnerName)}</strong>
-                            <span class="text-muted font-mono" style="font-size:0.72rem;">@${escapeHtml(effectiveOwnerUname)} · Pemilik Kegiatan</span>
-                        </div>
-                    </div>
-                    <span class="tag tag-teal text-xs font-mono"><i class="ph-bold ph-check"></i> Peserta Sah</span>
-                </div>
-                <input type="hidden" name="attendance_attendees" value="${escapeHtml(effectiveOwnerName)}">
-            </div>
+            <input type="hidden" name="attendance_attendees" value="${escapeHtml(effectiveOwnerName)}">
         `;
     } else {
-        // Mode Admin / HC: Tampilkan daftar pegawai nyata dari sistem dengan pemilik kegiatan tercentang
+        // Mode Admin / HC: Tampilkan daftar pegawai secara rapi
         const allUsers = (window.ALL_SYSTEM_USERS || []).filter(u => u.type !== 'Admin');
         const empCheckboxes = allUsers.map(emp => {
             const isOwner = (effectiveOwnerUname && emp.username.toLowerCase() === effectiveOwnerUname.toLowerCase())
@@ -2339,13 +2667,12 @@ function openCompleteActivityAttendanceModal(activityId, courseTitle, targetUser
             return `
                 <label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 text-xs mb-1" style="background:#fff; border-color:#e2e8f0; display:flex; align-items:center; justify-content:space-between;">
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" name="attendance_attendees" value="${escapeHtml(emp.name)}" ${isOwner ? 'checked' : ''} class="form-checkbox" style="width:16px; height:16px; accent-color:#0f766e;">
+                        <input type="checkbox" name="attendance_attendees" value="${escapeHtml(emp.name)}" ${isOwner ? 'checked' : ''} class="form-checkbox" style="width:15px; height:15px; accent-color:#0f766e;">
                         <div>
-                            <strong class="text-dark block" style="font-size:0.8rem;">${escapeHtml(emp.name)} ${isOwner ? '<span class="tag tag-teal" style="font-size:0.65rem; padding:1px 5px;">Pemilik</span>' : ''}</strong>
-                            <span class="text-muted font-mono" style="font-size:0.7rem;">${escapeHtml(emp.role || emp.dept || emp.username)} · @${escapeHtml(emp.username)}</span>
+                            <strong class="text-dark block" style="font-size:0.78rem;">${escapeHtml(emp.name)} ${isOwner ? '<span class="tag tag-teal" style="font-size:0.62rem; padding:1px 4px;">Pemilik</span>' : ''}</strong>
+                            <span class="text-muted font-mono" style="font-size:0.68rem;">${escapeHtml(emp.role || emp.dept || emp.username)}</span>
                         </div>
                     </div>
-                    <span class="tag tag-teal text-xs">Hadir di Absensi</span>
                 </label>
             `;
         }).join('');
@@ -2353,16 +2680,11 @@ function openCompleteActivityAttendanceModal(activityId, courseTitle, targetUser
         attendeeSectionHtml = `
             <div class="form-group mb-3">
                 <div class="flex items-center justify-between mb-1">
-                    <label class="form-label font-semibold text-xs text-muted uppercase">2. Rekap Peserta yang Tercatat Hadir di Absensi (HC)</label>
+                    <label class="form-label font-semibold text-xs text-muted uppercase">Daftar Peserta Hadir (HC)</label>
                     <span class="text-xs text-accent cursor-pointer" onclick="toggleSelectAllAttendance(this)">Pilih Semua</span>
                 </div>
-                <div class="attendance-emp-list p-2 border rounded" style="background:#f8fafc; max-height:140px; overflow-y:auto;">
+                <div class="attendance-emp-list p-2 border rounded" style="background:#f8fafc; max-height:120px; overflow-y:auto;">
                     ${empCheckboxes}
-                </div>
-
-                <div class="mt-2">
-                    <label class="text-xs text-muted font-semibold block mb-1">+ Tambah Nama Peserta Lapangan Lainnya (1 nama per baris):</label>
-                    <textarea id="attend-extra-names" class="form-input text-xs" rows="2" placeholder="Contoh:&#10;Rian Setiawan&#10;Dewi Sartika"></textarea>
                 </div>
             </div>
         `;
@@ -2370,38 +2692,28 @@ function openCompleteActivityAttendanceModal(activityId, courseTitle, targetUser
 
     const bodyHtml = `
         <div class="complete-act-modal-body">
-            <div class="p-3 mb-3 border rounded text-xs" style="background:#f0fdf4; border-color:#86efac; color:#166534; line-height:1.5;">
-                <div class="flex items-center gap-2 font-bold mb-1" style="font-size:0.825rem; color:#15803d;">
-                    <i class="ph-fill ph-seal-check" style="font-size:1.15rem;"></i>
-                    <span>Kebijakan Human Capital (HC) PT ANTAM Tbk Pomalaa</span>
-                </div>
-                Peserta pelatihan tidak otomatis mendapatkan sertifikat. Kelulusan dan arsip resmi diverifikasi melalui <strong>Berkas Absensi Pelatihan</strong> yang diunggah oleh pihak HC atau pegawai bersangkutan. Mohon upload file absensi kegiatan ini agar pihak Biro dan Admin dapat langsung meninjau &amp; mengunduh berkasnya.
-            </div>
-
-            <div class="p-2.5 mb-3 bg-gray-50 border rounded text-xs flex items-center justify-between flex-wrap gap-2" style="background:#f8fafc; border-color:#e2e8f0;">
+            <div class="p-2.5 mb-3 rounded border flex items-center justify-between" style="background:#f8fafc; border-color:#e2e8f0;">
                 <div>
-                    <span class="text-muted block text-xs">Nama Kegiatan Pelatihan:</span>
-                    <strong class="text-dark text-sm">${escapeHtml(cleanCourse)}</strong>
-                    <div class="text-xs text-muted font-mono mt-0.5">Pemilik: <strong>${escapeHtml(effectiveOwnerName)}</strong> (@${escapeHtml(effectiveOwnerUname)})</div>
+                    <span class="text-xs text-muted block uppercase font-mono" style="font-size:0.68rem;">Kegiatan Pelatihan</span>
+                    <strong class="text-dark block" style="font-size:0.88rem;">${escapeHtml(cleanCourse)}</strong>
                 </div>
-                <span class="tag tag-teal text-xs font-mono"><i class="ph-fill ph-shield-check"></i> Verifikasi HC Pomalaa</span>
+                <span class="tag tag-teal text-xs font-mono"><i class="ph-bold ph-user"></i> ${escapeHtml(effectiveOwnerName)}</span>
             </div>
 
             <!-- Upload Dokumen Absensi (Wajib) -->
-            <div class="form-group mb-3">
-                <label class="form-label font-semibold text-xs text-muted uppercase">1. Upload Berkas Daftar Hadir / Absensi Resmi HC * (Wajib)</label>
-                <div class="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 transition" 
+            <div class="form-group mb-2">
+                <label class="form-label font-semibold text-xs text-muted uppercase mb-1 block">Unggah Berkas Daftar Hadir / Absensi *</label>
+                <div class="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-slate-50 transition" 
                      id="attend-dropzone" 
                      onclick="document.getElementById('attend-file-input').click()"
                      style="border-color:#0f766e; background:#f0fdfa;">
-                    <i class="ph-fill ph-upload-simple text-accent" style="font-size: 2.2rem; display:block; margin: 0 auto 0.35rem;"></i>
-                    <div class="text-xs font-bold text-dark" id="attend-title">Klik atau Tarik File Absensi ke Sini</div>
-                    <div class="text-xs text-muted mt-0.5" id="attend-sub">Format: Dokumen scan PDF tanda tangan, file Excel (.xlsx), Word, atau foto presensi</div>
+                    <i class="ph-bold ph-upload-simple text-accent" style="font-size: 2rem; display:block; margin: 0 auto 0.35rem;"></i>
+                    <div class="text-xs font-bold text-dark" id="attend-title">Klik atau Tarik Berkas Absensi ke Sini</div>
+                    <div class="text-xs text-muted mt-0.5" id="attend-sub">Format: PDF scan tanda tangan, Excel (.xlsx), Word, atau foto presensi</div>
                     <input type="file" id="attend-file-input" accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg" style="display:none;" onchange="handleAttendanceFileSelect(this)">
                 </div>
             </div>
 
-            <!-- Daftar Karyawan yang Mengikuti Kegiatan -->
             ${attendeeSectionHtml}
         </div>
     `;
@@ -2409,11 +2721,11 @@ function openCompleteActivityAttendanceModal(activityId, courseTitle, targetUser
     const footerHtml = `
         <button type="button" class="btn-light" onclick="closeModal()">Batal</button>
         <button type="button" class="btn-dark" id="btn-submit-attend" onclick="submitCompleteActivityAttendance('${activityId}', '${addslashesJs(cleanCourse)}')">
-            <i class="ph-fill ph-check-circle"></i> Konfirmasi Selesai &amp; Simpan Berkas Absensi (HC)
+            <i class="ph-fill ph-check-circle"></i> Simpan Berkas Absensi
         </button>
     `;
 
-    openModal('Konfirmasi Selesai & Unggah Berkas Absensi — HC PT ANTAM', bodyHtml, footerHtml, 'ph-fill ph-clipboard-text');
+    openModal('Unggah Berkas Absensi Pelatihan', bodyHtml, footerHtml, 'ph-fill ph-file-arrow-up');
 }
 
 function handleAttendanceFileSelect(input) {
@@ -2480,14 +2792,14 @@ function submitCompleteActivityAttendance(activityId, courseTitle) {
         .then(res => {
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Konfirmasi Selesai &amp; Simpan Berkas Absensi (HC)';
+                submitBtn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Simpan Berkas Absensi';
             }
 
             if (res.success) {
                 if (typeof playNotificationSound === 'function') {
                     playNotificationSound('success');
                 }
-                showToast('🎉 Berhasil! Pihak HC telah mengonfirmasi penyelesaian kegiatan dan berkas absensi resmi telah tersimpan. Biro & Admin kini dapat meninjau berkas tersebut.', 'success');
+                showToast('🎉 Berhasil! Berkas absensi resmi telah tersimpan dan kegiatan berhasil diselesaikan.', 'success');
                 closeModal();
                 setTimeout(() => {
                     window.location.reload();
@@ -2499,7 +2811,7 @@ function submitCompleteActivityAttendance(activityId, courseTitle) {
         .catch(() => {
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Konfirmasi Selesai &amp; Simpan Berkas Absensi (HC)';
+                submitBtn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Simpan Berkas Absensi';
             }
             showToast('Terjadi gangguan jaringan. Coba lagi.', 'error');
         });
